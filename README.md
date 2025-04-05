@@ -22,7 +22,7 @@
 Приложение с графическим интерфейсом на Unity
 
 ## Разбиение на компоненты
-![SVG Image](./img/ComponentDiagramm.svg)
+![SVG Image](./img/ComponentDiagram.svg)
 
 ## UML компонента доступа к данным и бизнес логики
 ![SVG Image](./img/PPO_UML.svg)
