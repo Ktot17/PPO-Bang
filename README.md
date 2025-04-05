@@ -16,3 +16,13 @@
 
 ## User-flow диаграмма
 ![SVG Image](./img/user-flow.svg)
+
+## Тип приложения
+
+Приложение с графическим интерфейсом на Unity
+
+## Разбиение на компоненты
+![SVG Image](./img/ComponentDiagram.svg)
+
+## UML компонента доступа к данным и бизнес логики
+![SVG Image](./img/PPO_UML.svg)
