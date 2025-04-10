@@ -1,52 +1,73 @@
-﻿using BLComponent.Cards;
-using BLComponent.InputPorts;
+﻿using BLComponent.InputPorts;
 using BLComponent.OutputPort;
-using Newtonsoft.Json;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("BLUnitTests")]
 namespace BLComponent;
 
 public interface IGet
 {
-    public int GetPlayerIndex(IReadOnlyList<Player> players, int currentPlayer);
-    public int GetCardIndex(IReadOnlyList<Card?> cards, int unknownCardsCount, int? playerId = null);
+    public Guid GetPlayerId(IReadOnlyList<Player> players, Guid currentPlayerId);
+    public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount, Guid? playerId = null);
 }
 
-public class GameContext(List<Player> players, Deck deck, int curPlayer, IGet get)
+internal class GameState(List<Player> players, Deck deck, Guid currentPlayerId, IGet get)
 {
+    private int _currentPlayerIndex;
     public List<Player> Players { get; } = players;
     public Deck CardDeck { get; } = deck;
-    public int CurrentPlayer { get; } = curPlayer;
+    public Guid CurrentPlayerId { get; private set; } = currentPlayerId;
+    public Player CurrentPlayer => Players.First(p => p.Id == CurrentPlayerId);
     public IGet Get { get; } = get;
+    public List<Player> LivePlayers => [.. Players.Where(p => !p.IsDead)];
+    public IReadOnlyList<Player> DeadPlayers => [.. Players.Where(p => p.IsDead)];
 
-    public int GetRange(int player, int target)
+    public int GetRange(Guid playerId, Guid targetId)
     {
-        var add = Players[target].CardsOnBoard.Any(c => c.Name == CardName.Mustang) ? 1 : 0;
-        var sub = Players[player].CardsOnBoard.Any(c => c.Name == CardName.Scope) ? 1 : 0;
-        return int.Min(Players.Count - int.Abs(player - target), int.Abs(player - target)) + add - sub;
+        var playerIndex = Players.FindIndex(p => p.Id == playerId);
+        var targetIndex = Players.FindIndex(p => p.Id == targetId);
+        var add = Players[targetIndex].CardsOnBoard.Any(c => c.Name == CardName.Mustang) ? 1 : 0;
+        var sub = Players[playerIndex].CardsOnBoard.Any(c => c.Name == CardName.Scope) ? 1 : 0;
+        return int.Min(Players.Count - int.Abs(playerIndex - targetIndex), int.Abs(playerIndex - targetIndex)) + add - sub;
     }
+
+    public Player GetNextPlayer()
+    {
+        var index = _currentPlayerIndex;
+        do
+        {
+            index = (index + 1) % Players.Count;
+        } while (Players[index].IsDead);
+        return Players[index];
+    }
+
+    public void NextPlayer()
+    {
+        do
+        {
+            _currentPlayerIndex = (_currentPlayerIndex + 1) % Players.Count;
+        } while (Players[_currentPlayerIndex].IsDead);
+        CurrentPlayerId = Players[_currentPlayerIndex].Id;
+    }
+
+    public void FixIndex() => _currentPlayerIndex = Players.FindIndex(p => p.Id == CurrentPlayerId);
 }
 
-[Serializable]
 public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGameManager
 {
-    [JsonProperty]
-    private readonly List<Player> _players = [];
-    private readonly Deck _cardDeck = new(cardRepository);
-    [JsonProperty]
-    private int _currentPlayer;
-    private int _currentPlayerId;
+    private GameState _gameState = null!;
     private readonly Random _random = new();
     private readonly List<PlayerRole> _roles =
         [PlayerRole.Renegade, PlayerRole.Outlaw,
             PlayerRole.Outlaw, PlayerRole.DeputySheriff,
             PlayerRole.Outlaw, PlayerRole.DeputySheriff];
 
-    public IReadOnlyList<Player> Players => _players;
-    public Player CurPlayer => LivePlayers()[_currentPlayer];
-    public Card? TopDiscardedCard => _cardDeck.TopDiscardedCard;
+    public IReadOnlyList<Player> Players => _gameState.Players;
+    public Player CurPlayer => _gameState.CurrentPlayer;
+    public Card? TopDiscardedCard => _gameState.CardDeck.TopDiscardedCard;
+    public List<Player> LivePlayers => _gameState.LivePlayers;
+    public IReadOnlyList<Player> DeadPlayers => _gameState.DeadPlayers;
 
-    public void GameInit(IEnumerable<int> playerIds)
+    public void GameInit(IEnumerable<Guid> playerIds)
     {
         var enumerable = playerIds.ToList();
         if (enumerable.Count is < 4 or > 7)
@@ -60,127 +81,129 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
             var k = _random.Next(n + 1);
             (enumerable[n], enumerable[k]) = (enumerable[k], enumerable[n]);
         }
-        _players.Add(new Player(enumerable[0], PlayerRole.Sheriff, 5));
+        var players = new List<Player> { new(enumerable[0], PlayerRole.Sheriff, 5) };
         for (var i = 1; i < enumerable.Count; ++i)
         {
             var k = _random.Next(enumerable.Count - i);
-            _players.Add(new Player(enumerable[i], _roles[k], 4));
+            players.Add(new Player(enumerable[i], _roles[k], 4));
             _roles.RemoveAt(k);
         }
+        
+        _gameState = new GameState(players, new Deck(cardRepository), players[0].Id, get);
 
-        foreach (var player in _players)
+        foreach (var player in _gameState.Players)
             for (var i = 0; i < player.MaxHealth; ++i)
-                player.AddCardInHand(_cardDeck.Draw());
-        CurPlayer.AddCardInHand(_cardDeck.Draw());
-        CurPlayer.AddCardInHand(_cardDeck.Draw());
+                player.AddCardInHand(_gameState.CardDeck.Draw());
+        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
+        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
     }
 
-    public CardRc PlayCard(int cardIndex)
+    private void PlayerClear(Guid playerId)
     {
-        _currentPlayerId = CurPlayer.Id;
-        var isIndians = CurPlayer.CardsInHand[cardIndex].Name is CardName.Indians;
-        var rc = CurPlayer.CardsInHand[cardIndex]
-            .Play(new GameContext(LivePlayers(), _cardDeck, _currentPlayer, get));
-        if (rc is not CardRc.Ok) return rc;
-        DiscardCard(cardIndex);
-        if (!isIndians)
-            foreach (var player in DeadPlayers().Where(p => p.IsDeadOnThisTurn))
-                switch (player.Role)
-                {
-                    case PlayerRole.Outlaw:
-                    {
-                        for (var i = 0; i < 3; ++i)
-                            CurPlayer.AddCardInHand(_cardDeck.Draw());
-                        break;
-                    }
-                    case PlayerRole.DeputySheriff when CurPlayer.Role is PlayerRole.Sheriff:
-                    {
-                        var cardCount = CurPlayer.CardCount;
-                        for (var i = 0; i < cardCount; ++i)
-                            _cardDeck.Discard(CurPlayer.RemoveCard(0));
-                        break;
-                    }
-                    case PlayerRole.Renegade:
-                    case PlayerRole.Sheriff:
-                    default:
-                        break;
-                }
-        rc = CheckEndGame();
-        return rc;
+        var player = Players.First(p => p.Id == playerId);
+        var cardsInHandCount = player.CardsInHand.Count;
+        var cardsOnBoardCount = player.CardsOnBoard.Count;
+        for (var i = 0; i < cardsInHandCount; ++i)
+            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsInHand[0].Id));
+        for (var i = 0; i < cardsOnBoardCount; ++i)
+            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsOnBoard[0].Id));
+        if (player.Weapon != null)
+            _gameState.CardDeck.Discard(player.RemoveCard(player.Weapon.Id));
     }
 
-    public void DiscardCard(int cardIndex) => _cardDeck.Discard(CurPlayer.RemoveCard(cardIndex));
+    public CardRc PlayCard(Guid cardId)
+    {
+        Card? curCard;
+        try
+        {
+            curCard = CurPlayer.CardsInHand.First(c => c.Id == cardId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new NotExistingGuidException();
+        }
+        var isIndians = curCard.Name is CardName.Indians;
+        var rc = curCard.Play(_gameState);
+        if (rc is not CardRc.Ok) return rc;
+        DiscardCard(curCard.Id);
+        if (isIndians)
+            return CheckEndGame();
+        foreach (var player in DeadPlayers.Where(p => p.IsDeadOnThisTurn))
+            switch (player.Role)
+            {
+                case PlayerRole.Outlaw:
+                    for (var i = 0; i < 3; ++i)
+                        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
+                    break;
+                case PlayerRole.DeputySheriff when CurPlayer.Role is PlayerRole.Sheriff:
+                    PlayerClear(CurPlayer.Id);
+                    break;
+                case PlayerRole.Renegade:
+                case PlayerRole.Sheriff:
+                default:
+                    break;
+            }
+        return CheckEndGame();
+    }
+
+    public void DiscardCard(Guid cardId) => _gameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId));
 
     public CardRc EndTurn()
     {
         var i = 0;
         while (true)
         {
-            if (i == 0 && CurPlayer.CardsInHand.Count > CurPlayer.Health) return CardRc.CantEndTurn;
+            if (i == 0 && CurPlayer.CardsInHand.Count > CurPlayer.Health)
+                return CardRc.CantEndTurn;
             ++i;
             CurPlayer.EndTurn();
-            _currentPlayer = (_currentPlayer + 1) % LivePlayers().Count;
-            _currentPlayerId = LivePlayers()[(_currentPlayer + 1) % LivePlayers().Count].Id;
-            var cur = CurPlayer;
-            var cardIndex = cur.CardsOnBoard.ToList().FindIndex(c => c.Name == CardName.Dynamite);
-            if (cardIndex != -1)
-                ((Dynamite)cur.CardsOnBoard[cardIndex]).ApplyEffect(
-                    new GameContext(LivePlayers(), _cardDeck, _currentPlayer, get));
+            _gameState.NextPlayer();
+            Card? card;
+            if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Dynamite)) is not null)
+                ((Dynamite)card).ApplyEffect(_gameState);
 
-            cardIndex = cur.CardsOnBoard.ToList().FindIndex(c => c.Name == CardName.BeerBarrel);
-            if (cardIndex != -1)
-                ((BeerBarrel)cur.CardsOnBoard[cardIndex]).ApplyEffect(
-                    new GameContext(_players.Where(p => !p.IsDead || p.IsDeadOnThisTurn).ToList(),
-                        _cardDeck, _currentPlayer, get));
+            if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.BeerBarrel)) is not null)
+                ((BeerBarrel)card).ApplyEffect(_gameState);
 
-            if (cur.IsDead)
+            if (CurPlayer.IsDead)
             {
                 var rc = CheckEndGame();
                 if (rc is not CardRc.Ok) return rc;
                 continue;
             }
             
-            cardIndex = cur.CardsOnBoard.ToList().FindIndex(c => c.Name == CardName.Jail);
-            if (cardIndex != -1 && ((Jail)cur.CardsOnBoard[cardIndex]).ApplyEffect(
-                    new GameContext(LivePlayers(), _cardDeck, _currentPlayer, get)))
+            if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Jail)) is not null && 
+                ((Jail)card).ApplyEffect(_gameState))
                 continue;
 
-            cur.AddCardInHand(_cardDeck.Draw());
-            cur.AddCardInHand(_cardDeck.Draw());
+            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
+            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
             return CardRc.Ok;
         }
     }
-    
-    
-    public List<Player> LivePlayers() => _players.Where(p => !p.IsDead).ToList();
 
-    public IReadOnlyList<Player> DeadPlayers() => _players.Where(p => p.IsDead).ToList();
-
-    public CardRc CheckEndGame()
+    internal CardRc CheckEndGame()
     {
-        if (_players[0].IsDead)
-            return _players.Any(p => p.Role != PlayerRole.Renegade && !p.IsDead) ? 
+        if (Players[0].IsDead)
+            return Players.Any(p => p.Role != PlayerRole.Renegade && !p.IsDead) ? 
                 CardRc.OutlawWin : CardRc.RenegadeWin;
 
-        if (!_players.Any(p => p is { Role: PlayerRole.Outlaw, IsDead: false }) &&
-            !_players.Any(p => p is { Role: PlayerRole.Renegade, IsDead: false }))
+        if (!Players.Any(p => p is { Role: PlayerRole.Outlaw, IsDead: false }) &&
+            !Players.Any(p => p is { Role: PlayerRole.Renegade, IsDead: false }))
             return CardRc.SheriffWin;
 
-        foreach (var player in DeadPlayers().Where(p => p.IsDeadOnThisTurn))
+        foreach (var player in DeadPlayers.Where(p => p.IsDeadOnThisTurn))
         {
-            var cardCount = player.CardCount;
-            for (var i = 0; i < cardCount; ++i)
-                _cardDeck.Discard(player.RemoveCard(0));
+            PlayerClear(player.Id);
             player.DeadEarlier();
         }
         
-        _currentPlayer = LivePlayers().FindIndex(p => p.Id == _currentPlayerId);
+        _gameState.FixIndex();
 
         return CardRc.Ok;
     }
+
+    public int GetRange(Guid playerId, Guid targetId) => _gameState.GetRange(playerId, targetId);
     
-    internal void ForUnitTestWithDynamiteAndBeerBarrel()
-    {
-        _cardDeck.ForUnitTestWithDynamiteAndBeerBarrel();
-    }
+    internal void ForUnitTestWithDynamiteAndBeerBarrel() => _gameState.CardDeck.ForUnitTestWithDynamiteAndBeerBarrel();
 }

@@ -1,4 +1,4 @@
-﻿namespace BLComponent.Cards;
+﻿namespace BLComponent;
 
 public abstract class InstantCard : Card
 {
@@ -15,16 +15,17 @@ public sealed class Bang : InstantCard
         Name = CardName.Bang;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var player = context.Players[context.CurrentPlayer];
+        var player = state.CurrentPlayer;
         if (player.IsBangPlayed && (player.Weapon is null || player.Weapon.Name != CardName.Volcanic))
             return CardRc.CantPlay;
-        var playerIndex = GetTarget(context);
-        if (player.Range < context.GetRange(context.CurrentPlayer, playerIndex))
+        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+            state.CurrentPlayerId);
+        if (player.Range < state.GetRange(state.CurrentPlayerId, playerId))
             return CardRc.TooFar;
         player.BangPlayed();
-        Shoot(context, playerIndex);
+        Shoot(state, playerId);
         return CardRc.Ok;
     }
 }
@@ -36,10 +37,10 @@ public sealed class Beer : InstantCard
         Name = CardName.Beer;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var player = context.Players[context.CurrentPlayer];
-        if (context.Players.Count(p => !p.IsDead) <= 2 ||
+        var player = state.CurrentPlayer;
+        if (state.LivePlayers.Count <= 2 ||
             player.Heal(1))
             return CardRc.CantPlay;
         return CardRc.Ok;
@@ -53,7 +54,7 @@ public sealed class Missed : InstantCard
         Name = CardName.Missed;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
         return CardRc.CantPlay;
     }
@@ -66,11 +67,20 @@ public sealed class Panic : InstantCard
         Name = CardName.Panic;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var playerIndex = GetTarget(context);
-        var target = context.Players[playerIndex];
-        if (1 < context.GetRange(context.CurrentPlayer, playerIndex))
+        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+            state.CurrentPlayerId);
+        Player? target;
+        try
+        {
+            target = state.Players.First(p => p.Id == playerId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new NotExistingGuidException();
+        }
+        if (1 < state.GetRange(state.CurrentPlayerId, playerId))
             return CardRc.TooFar;
         if (target.CardCount == 0)
             return CardRc.CantPlay;
@@ -78,9 +88,9 @@ public sealed class Panic : InstantCard
         cards.AddRange(target.CardsInHand);
         cards.AddRange(target.CardsOnBoard);
         cards.Add(target.Weapon);
-        var cardIndex = context.Get.GetCardIndex(cards, target.CardsInHand.Count);
-        var card = target.RemoveCard(cardIndex);
-        context.Players[context.CurrentPlayer].AddCardInHand(card);
+        var cardId = state.Get.GetCardId(cards, target.CardsInHand.Count);
+        var card = target.RemoveCard(cardId);
+        state.CurrentPlayer.AddCardInHand(card);
         return CardRc.Ok;
     }
 }
@@ -92,19 +102,28 @@ public sealed class GeneralStore : InstantCard
         Name = CardName.GeneralStore;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
         var cards = new List<Card>();
-        for (var i = 0; i < context.Players.Count; i++)
-            cards.Add(context.CardDeck.Draw());
-        var playerIndex = context.CurrentPlayer;
+        for (var i = 0; i < state.LivePlayers.Count; i++)
+            cards.Add(state.CardDeck.Draw());
+        var playerId = state.CurrentPlayerId;
         do
         {
-            var card = context.Get.GetCardIndex(cards, 0, context.Players[playerIndex].Id);
-            context.Players[playerIndex].AddCardInHand(cards[card]);
-            cards.RemoveAt(card);
-            playerIndex = (playerIndex + 1) % context.Players.Count;
-        } while (playerIndex != context.CurrentPlayer);
+            var cardId = state.Get.GetCardId(cards, 0, state.CurrentPlayerId);
+            Card? card;
+            try
+            {
+                card = cards.First(c => c.Id == cardId);
+            }
+            catch (InvalidOperationException)
+            {
+                throw new NotExistingGuidException();
+            }
+            state.CurrentPlayer.AddCardInHand(card);
+            cards.Remove(card);
+            state.NextPlayer();
+        } while (playerId != state.CurrentPlayerId);
         return CardRc.Ok;
     }
 }
@@ -116,23 +135,21 @@ public sealed class Indians : InstantCard
         Name = CardName.Indians;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var playerIndex = (context.CurrentPlayer + 1) % context.Players.Count;
-        while (playerIndex != context.CurrentPlayer)
+        foreach (var player in state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId))
         {
-            var cardIndex = context.Players[playerIndex].CardsInHand.ToList().FindIndex(c => c.Name is CardName.Bang);
-            if (cardIndex == -1)
+            var card = player.CardsInHand.FirstOrDefault(c => c.Name is CardName.Bang);
+            if (card == null)
             {
-                context.Players[playerIndex].ApplyDamage(1,
-                    new GameContext(context.Players, context.CardDeck, playerIndex, context.Get));
+                player.ApplyDamage(1,
+                    new GameState(state.Players, state.CardDeck, player.Id, state.Get));
             }
             else
             {
-                var card = context.Players[playerIndex].RemoveCard(cardIndex);
-                context.CardDeck.Discard(card);
+                player.RemoveCard(card.Id);
+                state.CardDeck.Discard(card);
             }
-            playerIndex = (playerIndex + 1) % context.Players.Count;
         }
         return CardRc.Ok;
     }
@@ -145,20 +162,29 @@ public sealed class Duel : InstantCard
         Name = CardName.Duel;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var playerIndex = GetTarget(context);
-        var cur = playerIndex;
-        int cardIndex;
-        while ((cardIndex = context.Players[cur].CardsInHand.ToList().FindIndex(c => c.Name == CardName.Bang)) != -1)
+        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+            state.CurrentPlayerId);
+        Player? target;
+        try
         {
-            var card = context.Players[cur].RemoveCard(cardIndex);
-            context.CardDeck.Discard(card);
-            cur = cur == playerIndex ? context.CurrentPlayer : playerIndex;
+            target = state.Players.First(p => p.Id == playerId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new NotExistingGuidException();
+        }
+        var curPlayer = target;
+        while (curPlayer.CardsInHand.FirstOrDefault(c => c.Name == CardName.Bang) is { } card)
+        {
+            curPlayer.RemoveCard(card.Id);
+            state.CardDeck.Discard(card);
+            curPlayer = curPlayer.Id == state.CurrentPlayerId ? target : state.CurrentPlayer;
         }
 
-        context.Players[cur].ApplyDamage(1,
-            new GameContext(context.Players, context.CardDeck, cur, context.Get));
+        curPlayer.ApplyDamage(1,
+            new GameState(state.Players, state.CardDeck, curPlayer.Id, state.Get));
         return CardRc.Ok;
     }
 }
@@ -170,14 +196,10 @@ public sealed class Gatling : InstantCard
         Name = CardName.Gatling;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var playerIndex = (context.CurrentPlayer + 1) % context.Players.Count;
-        while (playerIndex != context.CurrentPlayer)
-        {
-            Shoot(context, playerIndex);
-            playerIndex = (playerIndex + 1) % context.Players.Count;
-        }
+        foreach (var player in state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId))
+            Shoot(state, player.Id);
 
         return CardRc.Ok;
     }
@@ -190,19 +212,28 @@ public sealed class CatBalou : InstantCard
         Name = CardName.CatBalou;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var playerIndex = GetTarget(context);
-        var target = context.Players[playerIndex];
+        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+            state.CurrentPlayerId);
+        Player? target;
+        try
+        {
+            target = state.Players.First(p => p.Id == playerId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new NotExistingGuidException();
+        }
         if (target.CardCount == 0)
             return CardRc.CantPlay;
         var cards = new List<Card?>();
         cards.AddRange(target.CardsInHand);
         cards.AddRange(target.CardsOnBoard);
         cards.Add(target.Weapon);
-        var cardIndex = context.Get.GetCardIndex(cards, target.CardsInHand.Count);
-        var card = target.RemoveCard(cardIndex);
-        context.CardDeck.Discard(card);
+        var cardId = state.Get.GetCardId(cards, target.CardsInHand.Count);
+        var card = target.RemoveCard(cardId);
+        state.CardDeck.Discard(card);
         return CardRc.Ok;
     }
 }
@@ -214,15 +245,11 @@ public sealed class Saloon : InstantCard
         Name = CardName.Saloon;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        context.Players[context.CurrentPlayer].Heal(2);
-        var playerIndex = (context.CurrentPlayer + 1) % context.Players.Count;
-        while (playerIndex != context.CurrentPlayer)
-        {
-            context.Players[playerIndex].Heal(1);
-            playerIndex = (playerIndex + 1) % context.Players.Count;
-        }
+        foreach (var player in state.LivePlayers)
+            player.Heal(player == state.CurrentPlayer ? 2 : 1);
+
         return CardRc.Ok;
     }
 }
@@ -234,12 +261,12 @@ public sealed class Stagecoach : InstantCard
         Name = CardName.Stagecoach;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
         for (var i = 0; i < 2; i++)
         {
-            var card = context.CardDeck.Draw();
-            context.Players[context.CurrentPlayer].AddCardInHand(card);
+            var card = state.CardDeck.Draw();
+            state.CurrentPlayer.AddCardInHand(card);
         }
         return CardRc.Ok;
     }
@@ -252,12 +279,12 @@ public sealed class WellsFargo : InstantCard
         Name = CardName.WellsFargo;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
         for (var i = 0; i < 3; i++)
         {
-            var card = context.CardDeck.Draw();
-            context.Players[context.CurrentPlayer].AddCardInHand(card);
+            var card = state.CardDeck.Draw();
+            state.CurrentPlayer.AddCardInHand(card);
         }
         return CardRc.Ok;
     }

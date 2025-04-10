@@ -5,4 +5,4 @@ public class WrongNumberOfPlayersException(int players)
     
 public class NotUniqueIdsException() : Exception("Not unique ids for this game.");
 
-public class DiscardNotExistingCardException() : Exception("Player don't have card on this index.");
+public class NotExistingGuidException() : Exception("There are no game object with this Guid.");

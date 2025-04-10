@@ -1,10 +1,8 @@
-﻿using BLComponent.Cards;
+﻿namespace BLComponent;
 
-namespace BLComponent;
-
-public class Player(int id, PlayerRole role, int maxHealth)
+public class Player(Guid id, PlayerRole role, int maxHealth)
 {
-    public int Id { get; } = id;
+    public Guid Id { get; } = id;
     public PlayerRole Role { get; } = role;
     public int Health { get; private set; } = maxHealth;
     public int MaxHealth {get; } = maxHealth;
@@ -29,27 +27,20 @@ public class Player(int id, PlayerRole role, int maxHealth)
         return removedWeapon;
     }
 
-    internal Card RemoveCard(int index)
+    internal Card RemoveCard(Guid cardId)
     {
-        if (index < 0 || index >= CardCount)
-            throw new DiscardNotExistingCardException();
-        Card removedCard;
-        if (index < _cardsInHand.Count)
+        Card? removedCard;
+        if ((removedCard = _cardsInHand.FirstOrDefault(c => c.Id == cardId)) != null)
+            _cardsInHand.Remove(removedCard);
+        else if ((removedCard = _cardsOnBoard.FirstOrDefault(c => c.Id == cardId)) != null)
+            _cardsOnBoard.Remove(removedCard);
+        else if (Weapon != null && cardId == Weapon.Id)
         {
-            removedCard = _cardsInHand[index];
-            _cardsInHand.RemoveAt(index);
-        }
-        else if (index < _cardsOnBoard.Count + _cardsInHand.Count)
-        {
-            index -= _cardsInHand.Count;
-            removedCard = _cardsOnBoard[index];
-            _cardsOnBoard.RemoveAt(index);
-        }
-        else
-        {
-            removedCard = Weapon!;
+            removedCard = Weapon;
             Weapon = null;
         }
+        else
+            throw new NotExistingGuidException();
         return removedCard;
     }
     
@@ -61,22 +52,22 @@ public class Player(int id, PlayerRole role, int maxHealth)
     
     public int CardCount => _cardsInHand.Count + _cardsOnBoard.Count + (Weapon == null ? 0 : 1);
 
-    internal bool ApplyDamage(int damage, GameContext context)
+    internal bool ApplyDamage(int damage, GameState state)
     {
         Health -= damage;
         if (Health > 0) return true;
         while (Health != 1)
         {
-            var cardIndex = _cardsInHand.FindIndex(card => card.Name == CardName.Beer);
-            if (cardIndex == -1)
+            var card = _cardsInHand.FirstOrDefault(c => c.Name == CardName.Beer);
+            if (card == null)
             {
                 IsDeadOnThisTurn = true;
                 return false;
             }
 
-            var card = RemoveCard(cardIndex);
-            if (card.Play(context) is CardRc.Ok)
-                context.CardDeck.Discard(card);
+            _cardsInHand.Remove(card);
+            if (card.Play(state) is CardRc.Ok)
+                state.CardDeck.Discard(card);
             else
             {
                 AddCardInHand(card);

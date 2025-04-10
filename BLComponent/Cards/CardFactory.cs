@@ -1,4 +1,4 @@
-﻿namespace BLComponent.Cards;
+﻿namespace BLComponent;
 
 public static class CardFactory
 {

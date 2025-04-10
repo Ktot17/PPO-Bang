@@ -1,5 +1,4 @@
 using BLComponent;
-using BLComponent.Cards;
 using BLComponent.InputPorts;
 using Moq;
 
@@ -26,11 +25,14 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         
         Assert.Throws<WrongNumberOfPlayersException>(() => gameManager.GameInit(players));
         
-        players = new List<int>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+        players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         
         Assert.Throws<WrongNumberOfPlayersException>(() => gameManager.GameInit(players));
     }
@@ -40,7 +42,9 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([2, 2, 3, 5, 5, 6]);
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var players = new List<Guid>([id1, id1, Guid.NewGuid(), id2, id2, Guid.NewGuid()]);
         
         Assert.Throws<NotUniqueIdsException>(() => gameManager.GameInit(players));
     }
@@ -50,7 +54,7 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.Outlaw,
             PlayerRole.Outlaw, PlayerRole.Renegade, PlayerRole.Sheriff };
         
@@ -70,7 +74,7 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.DeputySheriff, PlayerRole.Outlaw,
             PlayerRole.Outlaw, PlayerRole.Renegade, PlayerRole.Sheriff };
         
@@ -90,7 +94,8 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.DeputySheriff, PlayerRole.Outlaw,
             PlayerRole.Outlaw, PlayerRole.Outlaw, PlayerRole.Renegade, PlayerRole.Sheriff };
         
@@ -110,7 +115,8 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.DeputySheriff, PlayerRole.DeputySheriff, PlayerRole.Outlaw,
             PlayerRole.Outlaw, PlayerRole.Outlaw, PlayerRole.Renegade, PlayerRole.Sheriff };
         
@@ -130,9 +136,10 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        Assert.Throws<ArgumentOutOfRangeException>(() => gameManager.PlayCard(-1));
+        Assert.Throws<NotExistingGuidException>(() => gameManager.PlayCard(Guid.NewGuid()));
     }
 
     [Fact]
@@ -140,12 +147,14 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
+        var id = gameManager.CurPlayer.Id;
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
-        _getMock.Setup(get => get.GetPlayerIndex(gameManager.LivePlayers(), 0)).Returns(2);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(gameManager.LivePlayers[2].Id);
 
-        var rc = gameManager.PlayCard(0);
+        var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.TooFar, rc);
         Assert.Equal(cardCount, gameManager.CurPlayer.CardsInHand.Count);
     }
@@ -155,23 +164,25 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
+        var id = gameManager.CurPlayer.Id;
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
-        _getMock.Setup(get => get.GetPlayerIndex(gameManager.LivePlayers(), 0)).Returns(1);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(gameManager.LivePlayers[1].Id);
 
-        var rc = gameManager.PlayCard(0);
+        var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.Ok, rc);
         Assert.Equal(cardCount - 1, gameManager.CurPlayer.CardsInHand.Count);
         --cardCount;
 
-        rc = gameManager.PlayCard(0);
+        rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.CantPlay, rc);
         Assert.Equal(cardCount, gameManager.CurPlayer.CardsInHand.Count);
 
         gameManager.CurPlayer.ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Volcanic, CardSuit.Clubs, CardRank.Ace));
         
-        rc = gameManager.PlayCard(0);
+        rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.Ok, rc);
         Assert.Equal(cardCount - 1, gameManager.CurPlayer.CardsInHand.Count);
     }
@@ -181,19 +192,20 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
         var id = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Winchester, CardSuit.Clubs, CardRank.Ace));
-        var outlawIndex = gameManager.LivePlayers().FindIndex(p => p.Role == PlayerRole.Outlaw);
-        _getMock.Setup(get => get.GetPlayerIndex(gameManager.LivePlayers(), 0)).Returns(outlawIndex);
+        var outlawId = gameManager.LivePlayers.First(p => p.Role == PlayerRole.Outlaw).Id;
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(outlawId);
 
-        gameManager.LivePlayers()[outlawIndex].ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, outlawIndex, _getMock.Object));
-        var rc = gameManager.PlayCard(0);
+        gameManager.LivePlayers.First(p => p.Id == outlawId).ApplyDamage(3,
+            new GameState(gameManager.LivePlayers, null!, outlawId, _getMock.Object));
+        var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.Ok, rc);
-        Assert.Equal(players.Count - 1, gameManager.LivePlayers().Count);
+        Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
         Assert.Equal(cardCount + 2, gameManager.CurPlayer.CardsInHand.Count);
         Assert.Equal(id, gameManager.CurPlayer.Id);
     }
@@ -203,19 +215,20 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
         var id = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Winchester, CardSuit.Clubs, CardRank.Ace));
-        var renegadeIndex = gameManager.LivePlayers().FindIndex(p => p.Role == PlayerRole.Renegade);
-        _getMock.Setup(get => get.GetPlayerIndex(gameManager.LivePlayers(), 0)).Returns(renegadeIndex);
+        var renegadeId = gameManager.LivePlayers.First(p => p.Role == PlayerRole.Renegade).Id;
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(renegadeId);
 
-        gameManager.LivePlayers()[renegadeIndex].ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, renegadeIndex, _getMock.Object));
-        var rc = gameManager.PlayCard(0);
+        gameManager.LivePlayers.First(p => p.Id == renegadeId).ApplyDamage(3,
+            new GameState(gameManager.LivePlayers, null!, renegadeId, _getMock.Object));
+        var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.Ok, rc);
-        Assert.Equal(players.Count - 1, gameManager.LivePlayers().Count);
+        Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
         Assert.Equal(cardCount - 1, gameManager.CurPlayer.CardsInHand.Count);
         Assert.Equal(id, gameManager.CurPlayer.Id);
     }
@@ -225,18 +238,19 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         var id = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Winchester, CardSuit.Clubs, CardRank.Ace));
-        var deputyIndex = gameManager.LivePlayers().FindIndex(p => p.Role == PlayerRole.DeputySheriff);
-        _getMock.Setup(get => get.GetPlayerIndex(gameManager.LivePlayers(), 0)).Returns(deputyIndex);
+        var deputyId = gameManager.LivePlayers.First(p => p.Role == PlayerRole.DeputySheriff).Id;
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(deputyId);
 
-        gameManager.LivePlayers()[deputyIndex].ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, deputyIndex, _getMock.Object));
-        var rc = gameManager.PlayCard(0);
+        gameManager.LivePlayers.First(p => p.Id == deputyId).ApplyDamage(3,
+            new GameState(gameManager.LivePlayers, null!, deputyId, _getMock.Object));
+        var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.Ok, rc);
-        Assert.Equal(players.Count - 1, gameManager.LivePlayers().Count);
+        Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
         Assert.Empty(gameManager.CurPlayer.CardsInHand);
         Assert.Equal(id, gameManager.CurPlayer.Id);
     }
@@ -246,22 +260,83 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         var id = gameManager.CurPlayer.Id;
-        gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Indians, CardSuit.Clubs, CardRank.Ace));
-        var deputyIndex = gameManager.LivePlayers().FindIndex(p => p.Role == PlayerRole.DeputySheriff);
-        _getMock.Setup(get => get.GetPlayerIndex(gameManager.LivePlayers(), 0)).Returns(deputyIndex);
+        var indians = CardFactory.CreateCard(CardName.Indians, CardSuit.Clubs, CardRank.Ace);
+        gameManager.CurPlayer.AddCardInHand(indians);
+        var deputy = gameManager.LivePlayers.First(p => p.Role == PlayerRole.DeputySheriff);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(deputy.Id);
 
-        gameManager.LivePlayers()[deputyIndex].ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, deputyIndex, _getMock.Object));
-        var deputyCardCount = gameManager.LivePlayers()[deputyIndex].CardsInHand.Count;
+        deputy.ApplyDamage(3, new GameState(gameManager.LivePlayers, null!, deputy.Id, _getMock.Object));
+        var deputyCardCount = deputy.CardsInHand.Count;
         for (var i = 0; i < deputyCardCount; ++i)
-            gameManager.LivePlayers()[deputyIndex].RemoveCard(0);
+            deputy.RemoveCard(deputy.CardsInHand[0].Id);
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
-        var rc = gameManager.PlayCard(cardCount - 1);
+        var rc = gameManager.PlayCard(indians.Id);
         Assert.Equal(CardRc.Ok, rc);
-        Assert.Equal(players.Count - 1, gameManager.LivePlayers().Count);
+        Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
+        Assert.Equal(cardCount - 1, gameManager.CurPlayer.CardsInHand.Count);
+        Assert.Equal(id, gameManager.CurPlayer.Id);
+    }
+    
+    [Fact]
+    public void PlayCard_DuelTest()
+    {
+        FillDeck();
+        var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
+        gameManager.GameInit(players);
+        var id = gameManager.CurPlayer.Id;
+        var duel = CardFactory.CreateCard(CardName.Duel, CardSuit.Clubs, CardRank.Ace);
+        gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
+        gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
+        gameManager.CurPlayer.AddCardInHand(duel);
+        gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
+        gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
+        var deputy = gameManager.LivePlayers.First(p => p.Role == PlayerRole.DeputySheriff);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(deputy.Id);
+        
+        var deputyCardCount = deputy.CardsInHand.Count;
+        for (var i = 0; i < deputyCardCount; ++i)
+            deputy.RemoveCard(deputy.CardsInHand[0].Id);
+        deputy.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
+        var cardCount = gameManager.CurPlayer.CardsInHand.Count;
+        var rc = gameManager.PlayCard(duel.Id);
+        Assert.Equal(CardRc.Ok, rc);
+        Assert.Equal(players.Count, gameManager.LivePlayers.Count);
+        Assert.Equal(cardCount - 2, gameManager.CurPlayer.CardsInHand.Count);
+        Assert.Equal(id, gameManager.CurPlayer.Id);
+    }
+
+    [Fact]
+    public void PlayCard_LastPlayerKillsPlayerTest()
+    {
+        FillDeck();
+        var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
+        gameManager.GameInit(players);
+        var sheriffId = gameManager.CurPlayer.Id;
+        gameManager.LivePlayers[0].ApplyDamage(4, null!);
+        gameManager.LivePlayers[0].RemoveCard(gameManager.LivePlayers[0].CardsInHand[0].Id);
+        gameManager.LivePlayers[0].RemoveCard(gameManager.LivePlayers[0].CardsInHand[0].Id);
+        gameManager.LivePlayers[0].RemoveCard(gameManager.LivePlayers[0].CardsInHand[0].Id);
+        gameManager.LivePlayers[0].RemoveCard(gameManager.LivePlayers[0].CardsInHand[0].Id);
+        for (var i = 0; i < players.Count - 1; ++i)
+        {
+            gameManager.LivePlayers[i].RemoveCard(gameManager.LivePlayers[i].CardsInHand[0].Id);
+            gameManager.LivePlayers[i].RemoveCard(gameManager.LivePlayers[i].CardsInHand[0].Id);
+            gameManager.EndTurn();
+        }
+
+        var id = gameManager.CurPlayer.Id;
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(sheriffId);
+        var cardCount = gameManager.CurPlayer.CardsInHand.Count;
+        var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
+        Assert.Equal(CardRc.OutlawWin, rc);
+        Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
         Assert.Equal(cardCount - 1, gameManager.CurPlayer.CardsInHand.Count);
         Assert.Equal(id, gameManager.CurPlayer.Id);
     }
@@ -271,9 +346,10 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        Assert.Throws<DiscardNotExistingCardException>(() => gameManager.DiscardCard(-1));
+        Assert.Throws<NotExistingGuidException>(() => gameManager.DiscardCard(Guid.NewGuid()));
     }
 
     [Fact]
@@ -281,10 +357,11 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
-        gameManager.DiscardCard(0);
+        gameManager.DiscardCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(cardCount - 1, gameManager.CurPlayer.CardsInHand.Count);
     }
 
@@ -293,7 +370,8 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         var playerId = gameManager.CurPlayer.Id;
         var rc = gameManager.EndTurn();
@@ -306,12 +384,13 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5, 6, 7]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        var playerId = gameManager.LivePlayers()[1].Id;
-        var playerCardCount = gameManager.LivePlayers()[1].CardsInHand.Count;
-        gameManager.CurPlayer.RemoveCard(0);
-        gameManager.CurPlayer.RemoveCard(0);
+        var playerId = gameManager.LivePlayers[1].Id;
+        var playerCardCount = gameManager.LivePlayers[1].CardsInHand.Count;
+        gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+        gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         var rc = gameManager.EndTurn();
         Assert.Equal(CardRc.Ok, rc);
         Assert.Equal(playerId, gameManager.CurPlayer.Id);
@@ -323,18 +402,18 @@ public class GameManagerTests
     {
         FillDeck(suit: CardSuit.Spades);
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        gameManager.CurPlayer.ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, 0, _getMock.Object));
+        gameManager.CurPlayer.ApplyDamage(3, new GameState(gameManager.LivePlayers,
+            null!, gameManager.CurPlayer.Id, _getMock.Object));
         for (var i = 0; i < 5; ++i)
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         gameManager.CurPlayer.AddCardOnBoard(CardFactory.CreateCard(CardName.Dynamite, CardSuit.Clubs, CardRank.Ace));
         for (var i = 0; i < 3; ++i)
         {
             gameManager.EndTurn();
-            gameManager.CurPlayer.RemoveCard(0);
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         }
         var rc = gameManager.EndTurn();
         Assert.Equal(CardRc.OutlawWin, rc);
@@ -345,26 +424,26 @@ public class GameManagerTests
     {
         FillDeck(suit: CardSuit.Spades);
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        gameManager.CurPlayer.RemoveCard(0);
-        gameManager.CurPlayer.RemoveCard(0);
+        gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+        gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         gameManager.EndTurn();
         var playerId = gameManager.CurPlayer.Id;
-        gameManager.CurPlayer.ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, 0, _getMock.Object));
+        gameManager.CurPlayer.ApplyDamage(3, new GameState(gameManager.LivePlayers,
+            null!, gameManager.CurPlayer.Id, _getMock.Object));
         for (var i = 0; i < 5; ++i)
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         gameManager.CurPlayer.AddCardOnBoard(CardFactory.CreateCard(CardName.Dynamite, CardSuit.Clubs, CardRank.Ace));
         for (var i = 0; i < 3; ++i)
         {
             gameManager.EndTurn();
-            gameManager.CurPlayer.RemoveCard(0);
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         }
         var rc = gameManager.EndTurn();
         Assert.Equal(CardRc.Ok, rc);
-        Assert.Equal(players.Count - 1, gameManager.LivePlayers().Count);
+        Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
         Assert.NotEqual(playerId, gameManager.CurPlayer.Id);
     }
     
@@ -373,21 +452,21 @@ public class GameManagerTests
     {
         FillDeck(suit: CardSuit.Spades);
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         for (var i = 0; i < 5; ++i)
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         var playerId = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.AddCardOnBoard(CardFactory.CreateCard(CardName.Dynamite, CardSuit.Clubs, CardRank.Ace));
         for (var i = 0; i < 3; ++i)
         {
             gameManager.EndTurn();
-            gameManager.CurPlayer.RemoveCard(0);
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         }
         var rc = gameManager.EndTurn();
         Assert.Equal(CardRc.Ok, rc);
-        Assert.Equal(players.Count, gameManager.LivePlayers().Count);
+        Assert.Equal(players.Count, gameManager.LivePlayers.Count);
         Assert.Equal(playerId, gameManager.CurPlayer.Id);
     }
     
@@ -396,25 +475,25 @@ public class GameManagerTests
     {
         FillDeck(26, CardSuit.Spades);
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        gameManager.CurPlayer.ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, 0, _getMock.Object));
+        gameManager.CurPlayer.ApplyDamage(3, new GameState(gameManager.LivePlayers,
+            null!, gameManager.CurPlayer.Id, _getMock.Object));
         for (var i = 0; i < 5; ++i)
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         var playerId = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.AddCardOnBoard(CardFactory.CreateCard(CardName.Dynamite, CardSuit.Clubs, CardRank.Seven));
         gameManager.CurPlayer.AddCardOnBoard(CardFactory.CreateCard(CardName.BeerBarrel, CardSuit.Clubs, CardRank.Ace));
         for (var i = 0; i < 3; ++i)
         {
             gameManager.EndTurn();
-            gameManager.CurPlayer.RemoveCard(0);
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         }
         gameManager.ForUnitTestWithDynamiteAndBeerBarrel();
         var rc = gameManager.EndTurn();
         Assert.Equal(CardRc.Ok, rc);
-        Assert.Equal(players.Count, gameManager.LivePlayers().Count);
+        Assert.Equal(players.Count, gameManager.LivePlayers.Count);
         Assert.Equal(playerId, gameManager.CurPlayer.Id);
         Assert.Equal(1, gameManager.CurPlayer.Health);
     }
@@ -424,18 +503,18 @@ public class GameManagerTests
     {
         FillDeck(suit: CardSuit.Clubs);
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        gameManager.CurPlayer.ApplyDamage(3, new GameContext(gameManager.LivePlayers(),
-            null!, 0, _getMock.Object));
+        gameManager.CurPlayer.ApplyDamage(3, new GameState(gameManager.LivePlayers,
+            null!, gameManager.CurPlayer.Id, _getMock.Object));
         for (var i = 0; i < 5; ++i)
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         gameManager.CurPlayer.AddCardOnBoard(CardFactory.CreateCard(CardName.BeerBarrel, CardSuit.Clubs, CardRank.Ace));
         for (var i = 0; i < 3; ++i)
         {
             gameManager.EndTurn();
-            gameManager.CurPlayer.RemoveCard(0);
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         }
         var rc = gameManager.EndTurn();
         Assert.Equal(CardRc.Ok, rc);
@@ -447,17 +526,17 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         for (var i = 0; i < 2; ++i)
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         var playerId = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.AddCardOnBoard(CardFactory.CreateCard(CardName.Jail, CardSuit.Clubs, CardRank.Ace));
         for (var i = 0; i < 3; ++i)
         {
             gameManager.EndTurn();
-            gameManager.CurPlayer.RemoveCard(0);
-            gameManager.CurPlayer.RemoveCard(0);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
+            gameManager.CurPlayer.RemoveCard(gameManager.CurPlayer.CardsInHand[0].Id);
         }
         var rc = gameManager.EndTurn();
         Assert.Equal(CardRc.Ok, rc);
@@ -469,15 +548,15 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4, 5]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         foreach (var player in gameManager.Players.Where(p => p.Role is not PlayerRole.Sheriff and
                      not PlayerRole.DeputySheriff))
             player.ApplyDamage(4,
-                new GameContext(gameManager.LivePlayers(), null!, 0, _getMock.Object));
+                new GameState(gameManager.LivePlayers, null!, gameManager.CurPlayer.Id, _getMock.Object));
         var rc = gameManager.CheckEndGame();
         Assert.Equal(CardRc.SheriffWin, rc);
-        Assert.Equal(2, gameManager.LivePlayers().Count);
+        Assert.Equal(2, gameManager.LivePlayers.Count);
     }
     
     [Fact]
@@ -485,14 +564,14 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
         foreach (var player in gameManager.Players.Where(p => p.Role is not PlayerRole.Renegade))
             player.ApplyDamage(5,
-                new GameContext(gameManager.LivePlayers(), null!, 0, _getMock.Object));
+                new GameState(gameManager.LivePlayers, null!, gameManager.CurPlayer.Id, _getMock.Object));
         var rc = gameManager.CheckEndGame();
         Assert.Equal(CardRc.RenegadeWin, rc);
-        Assert.Single(gameManager.LivePlayers());
+        Assert.Single(gameManager.LivePlayers);
     }
 
     [Fact]
@@ -500,10 +579,10 @@ public class GameManagerTests
     {
         FillDeck();
         var gameManager = new GameManager(_cardRepoMock.Object, _getMock.Object);
-        var players = new List<int>([1, 2, 3, 4]);
+        var players = new List<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()]);
         gameManager.GameInit(players);
-        gameManager.DiscardCard(0);
-        Assert.Equivalent(CardFactory.CreateCard(CardName.Bang, CardSuit.Diamonds, CardRank.Seven),
-            gameManager.TopDiscardedCard);
+        var id = gameManager.CurPlayer.CardsInHand[0].Id;
+        gameManager.DiscardCard(id);
+        Assert.Equal(id, gameManager.TopDiscardedCard!.Id);
     }
 }

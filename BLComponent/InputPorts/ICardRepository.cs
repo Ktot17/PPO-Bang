@@ -1,6 +1,4 @@
-﻿using BLComponent.Cards;
-
-namespace BLComponent.InputPorts;
+﻿namespace BLComponent.InputPorts;
 
 public interface ICardRepository
 {

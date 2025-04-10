@@ -2,9 +2,13 @@
 
 public interface IGameManager
 {
-    public void GameInit(IEnumerable<int> playerIds);
-    public CardRc PlayCard(int cardIndex);
-    public void DiscardCard(int cardIndex);
+    public void GameInit(IEnumerable<Guid> playerIds);
+    public CardRc PlayCard(Guid cardId);
+    public void DiscardCard(Guid cardId);
     public CardRc EndTurn();
-    public CardRc CheckEndGame();
+    public Player CurPlayer { get; }
+    public IReadOnlyList<Player> Players { get; }
+    public IReadOnlyList<Player> DeadPlayers { get; }
+    public Card? TopDiscardedCard { get; }
+    public int GetRange(Guid playerId, Guid targetId);
 }

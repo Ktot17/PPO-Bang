@@ -1,4 +1,4 @@
-﻿namespace BLComponent.Cards;
+﻿namespace BLComponent;
 
 public abstract class WeaponCard : Card
 {
@@ -9,11 +9,11 @@ public abstract class WeaponCard : Card
         Type = CardType.Weapon;
     }
 
-    public override CardRc Play(GameContext context)
+    internal override CardRc Play(GameState state)
     {
-        var weapon = context.Players[context.CurrentPlayer].ChangeWeapon(this);
+        var weapon = state.CurrentPlayer.ChangeWeapon(this);
         if (weapon != null)
-            context.CardDeck.Discard(weapon);
+            state.CardDeck.Discard(weapon);
         return CardRc.Ok;
     }
 }

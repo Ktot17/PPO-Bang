@@ -1,5 +1,4 @@
-﻿using BLComponent.Cards;
-using BLComponent.InputPorts;
+﻿using BLComponent.InputPorts;
 
 namespace BLComponent;
 

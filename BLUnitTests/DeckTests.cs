@@ -1,5 +1,4 @@
 ﻿using BLComponent;
-using BLComponent.Cards;
 using BLComponent.InputPorts;
 using Moq;
 
