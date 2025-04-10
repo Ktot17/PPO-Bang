@@ -22,6 +22,8 @@ public sealed class Bang : InstantCard
             return CardRc.CantPlay;
         var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
+        if (state.Players.FirstOrDefault(p => p.Id == playerId) == null)
+            throw new NotExistingGuidException();
         if (player.Range < state.GetRange(state.CurrentPlayerId, playerId))
             return CardRc.TooFar;
         player.BangPlayed();

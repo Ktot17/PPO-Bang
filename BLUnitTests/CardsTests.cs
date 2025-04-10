@@ -18,7 +18,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var rc = bang.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.Ok, rc);
         rc = bang.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
@@ -36,7 +36,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         players[0].ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Volcanic, CardSuit.Clubs, CardRank.Ace));
         var rc = bang.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.Ok, rc);
@@ -58,7 +58,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[2].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[2].Id);
         var rc = bang.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.TooFar, rc);
     }
@@ -85,7 +85,7 @@ public class CardsTests
         _cardRepoMock.Setup(repo => repo.GetAll()).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Hearts, CardRank.Ace)
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var deck = new Deck(_cardRepoMock.Object);
         players[1].AddCardOnBoard(barrel);
         var rc = bang.Play(new GameState(players, deck, players[0].Id, _getMock.Object));
@@ -108,7 +108,7 @@ public class CardsTests
         _cardRepoMock.Setup(repo => repo.GetAll()).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace)
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var deck = new Deck(_cardRepoMock.Object);
         players[1].AddCardOnBoard(barrel);
         var rc = bang.Play(new GameState(players, deck, players[0].Id, _getMock.Object));
@@ -131,7 +131,7 @@ public class CardsTests
         _cardRepoMock.Setup(repo => repo.GetAll()).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace)
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var deck = new Deck(_cardRepoMock.Object);
         players[1].AddCardInHand(missed);
         var rc = bang.Play(new GameState(players, deck, players[0].Id, _getMock.Object));
@@ -195,7 +195,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[2].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[2].Id);
         var rc = panic.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.TooFar, rc);
     }
@@ -210,7 +210,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var rc = panic.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.CantPlay, rc);
     }
@@ -225,7 +225,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         players[1].AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
         var cards = new List<Card?>();
         cards.AddRange(players[1].CardsInHand);
@@ -319,7 +319,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll()).Returns([]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var deck = new Deck(_cardRepoMock.Object);
         for (var i = 0; i < 2; ++i)
         {
@@ -345,7 +345,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll()).Returns([]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var deck = new Deck(_cardRepoMock.Object);
         for (var i = 0; i < 2; ++i)
         {
@@ -409,7 +409,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var rc = catBalou.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.CantPlay, rc);
     }
@@ -426,7 +426,7 @@ public class CardsTests
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll()).Returns([]);
         var deck = new Deck(_cardRepoMock.Object);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         players[1].AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
         var cards = new List<Card?>();
         cards.AddRange(players[1].CardsInHand);
@@ -629,7 +629,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[1].Id)).Returns(players[0].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Take(1).Concat(players.Skip(2)).ToList(), players[1].Id)).Returns(players[0].Id);
         var rc = jail.Play(new GameState(players, null!, players[1].Id, _getMock.Object));
         Assert.Equal(CardRc.CantPlay, rc);
     }
@@ -644,7 +644,7 @@ public class CardsTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var rc = jail.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.Ok, rc);
         rc = jail.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
@@ -664,7 +664,7 @@ public class CardsTests
         _cardRepoMock.Setup(repo => repo.GetAll()).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Six),
         ]);
-        _getMock.Setup(get => get.GetPlayerId(players, players[0].Id)).Returns(players[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(players[1].Id);
         var deck = new Deck(_cardRepoMock.Object);
         var rc = jail.Play(new GameState(players, null!, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.Ok, rc);
@@ -711,5 +711,46 @@ public class CardsTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => 
             CardFactory.CreateCard((CardName)50, CardSuit.Clubs, CardRank.Ace));
+    }
+
+    [Fact]
+    public void TargetCards_NotExistingGuidTest()
+    {
+        var players = new List<Player>([
+            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+        ]);
+        var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace);
+        var jail = (Jail)CardFactory.CreateCard(CardName.Jail, CardSuit.Clubs, CardRank.Ace);
+        var duel = (Duel)CardFactory.CreateCard(CardName.Duel, CardSuit.Clubs, CardRank.Ace);
+        var generalStore = (GeneralStore)CardFactory.CreateCard(CardName.GeneralStore, CardSuit.Clubs, CardRank.Ace);
+        var panic = (Panic)CardFactory.CreateCard(CardName.Panic, CardSuit.Clubs, CardRank.Ace);
+        var catBalou = (CatBalou)CardFactory.CreateCard(CardName.CatBalou, CardSuit.Clubs, CardRank.Ace);
+        
+        _cardRepoMock.Setup(repo => repo.GetAll()).Returns([
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+        ]);
+        var deck = new Deck(_cardRepoMock.Object);
+        _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(Guid.Empty);
+        _getMock.Setup(get => get.GetCardId(null!, players[1].CardsInHand.Count, null))
+            .Returns(Guid.Empty);
+
+        Assert.Throws<NotExistingGuidException>(() =>
+            bang.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
+        Assert.Throws<NotExistingGuidException>(() =>
+            jail.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
+        Assert.Throws<NotExistingGuidException>(() =>
+            duel.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
+        Assert.Throws<NotExistingGuidException>(() =>
+            generalStore.Play(new GameState(players, deck, players[0].Id, _getMock.Object)));
+        Assert.Throws<NotExistingGuidException>(() =>
+            panic.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
+        Assert.Throws<NotExistingGuidException>(() =>
+            catBalou.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
     }
 }

@@ -12,15 +12,7 @@ public abstract class Card(CardSuit suit, CardRank rank)
 
     internal static void Shoot(GameState state, Guid playerId)
     {
-        Player? target;
-        try
-        {
-            target = state.Players.First(p => p.Id == playerId);
-        }
-        catch (InvalidOperationException)
-        {
-            throw new NotExistingGuidException();
-        }
+        var target = state.Players.First(p => p.Id == playerId);
         var barrel = target.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Barrel);
         if (barrel != null && ((Barrel)barrel).ApplyEffect(state, playerId))
             return;

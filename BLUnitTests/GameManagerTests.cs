@@ -152,11 +152,12 @@ public class GameManagerTests
         gameManager.GameInit(players);
         var id = gameManager.CurPlayer.Id;
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
-        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(gameManager.LivePlayers[2].Id);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers.Skip(1).ToList(), id)).Returns(gameManager.LivePlayers[2].Id);
 
         var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.TooFar, rc);
         Assert.Equal(cardCount, gameManager.CurPlayer.CardsInHand.Count);
+        Assert.Equal(2, gameManager.GetRange(id, gameManager.LivePlayers[2].Id));
     }
     
     [Fact]
@@ -169,7 +170,7 @@ public class GameManagerTests
         gameManager.GameInit(players);
         var id = gameManager.CurPlayer.Id;
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
-        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(gameManager.LivePlayers[1].Id);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers.Skip(1).ToList(), id)).Returns(gameManager.LivePlayers[1].Id);
 
         var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.Ok, rc);
@@ -199,7 +200,7 @@ public class GameManagerTests
         var id = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Winchester, CardSuit.Clubs, CardRank.Ace));
         var outlawId = gameManager.LivePlayers.First(p => p.Role == PlayerRole.Outlaw).Id;
-        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(outlawId);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers.Skip(1).ToList(), id)).Returns(outlawId);
 
         gameManager.LivePlayers.First(p => p.Id == outlawId).ApplyDamage(3,
             new GameState(gameManager.LivePlayers, null!, outlawId, _getMock.Object));
@@ -222,7 +223,7 @@ public class GameManagerTests
         var id = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Winchester, CardSuit.Clubs, CardRank.Ace));
         var renegadeId = gameManager.LivePlayers.First(p => p.Role == PlayerRole.Renegade).Id;
-        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(renegadeId);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers.Skip(1).ToList(), id)).Returns(renegadeId);
 
         gameManager.LivePlayers.First(p => p.Id == renegadeId).ApplyDamage(3,
             new GameState(gameManager.LivePlayers, null!, renegadeId, _getMock.Object));
@@ -244,7 +245,7 @@ public class GameManagerTests
         var id = gameManager.CurPlayer.Id;
         gameManager.CurPlayer.ChangeWeapon((WeaponCard)CardFactory.CreateCard(CardName.Winchester, CardSuit.Clubs, CardRank.Ace));
         var deputyId = gameManager.LivePlayers.First(p => p.Role == PlayerRole.DeputySheriff).Id;
-        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(deputyId);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers.Skip(1).ToList(), id)).Returns(deputyId);
 
         gameManager.LivePlayers.First(p => p.Id == deputyId).ApplyDamage(3,
             new GameState(gameManager.LivePlayers, null!, deputyId, _getMock.Object));
@@ -273,6 +274,7 @@ public class GameManagerTests
         var deputyCardCount = deputy.CardsInHand.Count;
         for (var i = 0; i < deputyCardCount; ++i)
             deputy.RemoveCard(deputy.CardsInHand[0].Id);
+        deputy.AddCardOnBoard(CardFactory.CreateCard(CardName.Scope, CardSuit.Clubs, CardRank.Ace));
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
         var rc = gameManager.PlayCard(indians.Id);
         Assert.Equal(CardRc.Ok, rc);
@@ -297,7 +299,7 @@ public class GameManagerTests
         gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
         gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace));
         var deputy = gameManager.LivePlayers.First(p => p.Role == PlayerRole.DeputySheriff);
-        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(deputy.Id);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers.Skip(1).ToList(), id)).Returns(deputy.Id);
         
         var deputyCardCount = deputy.CardsInHand.Count;
         for (var i = 0; i < deputyCardCount; ++i)
@@ -332,7 +334,7 @@ public class GameManagerTests
         }
 
         var id = gameManager.CurPlayer.Id;
-        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers, id)).Returns(sheriffId);
+        _getMock.Setup(get => get.GetPlayerId(gameManager.LivePlayers.SkipLast(1).ToList(), id)).Returns(sheriffId);
         var cardCount = gameManager.CurPlayer.CardsInHand.Count;
         var rc = gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.OutlawWin, rc);
