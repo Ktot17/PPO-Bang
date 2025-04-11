@@ -7,21 +7,22 @@ namespace BLComponent;
 public interface IGet
 {
     public Guid GetPlayerId(IReadOnlyList<Player> players, Guid currentPlayerId);
-    public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount, Guid? playerId = null);
+    public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount) => GetCardId(cards, unknownCardsCount, null);
+    public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount, Guid? playerId);
 }
 
-internal class GameState(List<Player> players, Deck deck, Guid currentPlayerId, IGet get)
+internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentPlayerId, IGet get)
 {
     private int _currentPlayerIndex;
-    public List<Player> Players { get; } = players;
-    public Deck CardDeck { get; } = deck;
-    public Guid CurrentPlayerId { get; private set; } = currentPlayerId;
-    public Player CurrentPlayer => Players.First(p => p.Id == CurrentPlayerId);
-    public IGet Get { get; } = get;
-    public List<Player> LivePlayers => [.. Players.Where(p => !p.IsDead)];
-    public IReadOnlyList<Player> DeadPlayers => [.. Players.Where(p => p.IsDead)];
+    internal List<Player> Players { get; } = [.. players];
+    internal Deck CardDeck { get; } = deck;
+    internal Guid CurrentPlayerId { get; private set; } = currentPlayerId;
+    internal Player CurrentPlayer => Players.First(p => p.Id == CurrentPlayerId);
+    internal IGet Get { get; } = get;
+    internal IReadOnlyList<Player> LivePlayers => [.. Players.Where(p => !p.IsDead)];
+    internal IReadOnlyList<Player> DeadPlayers => [.. Players.Where(p => p.IsDead)];
 
-    public int GetRange(Guid playerId, Guid targetId)
+    internal int GetRange(Guid playerId, Guid targetId)
     {
         var playerIndex = Players.FindIndex(p => p.Id == playerId);
         var targetIndex = Players.FindIndex(p => p.Id == targetId);
@@ -30,7 +31,7 @@ internal class GameState(List<Player> players, Deck deck, Guid currentPlayerId, 
         return int.Min(Players.Count - int.Abs(playerIndex - targetIndex), int.Abs(playerIndex - targetIndex)) + add - sub;
     }
 
-    public Player GetNextPlayer()
+    internal Player GetNextPlayer()
     {
         var index = _currentPlayerIndex;
         do
@@ -40,7 +41,7 @@ internal class GameState(List<Player> players, Deck deck, Guid currentPlayerId, 
         return Players[index];
     }
 
-    public void NextPlayer()
+    internal void NextPlayer()
     {
         do
         {
@@ -48,12 +49,14 @@ internal class GameState(List<Player> players, Deck deck, Guid currentPlayerId, 
         } while (Players[_currentPlayerIndex].IsDead);
         CurrentPlayerId = Players[_currentPlayerIndex].Id;
     }
-
-    public void FixIndex() => _currentPlayerIndex = Players.FindIndex(p => p.Id == CurrentPlayerId);
 }
 
 public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGameManager
 {
+    private const int MinPlayerCount = 4;
+    private const int MaxPlayerCount = 7;
+    private const int OutlawRewardCardCount = 3;
+    
     private GameState _gameState = null!;
     private readonly Random _random = new();
     private readonly List<PlayerRole> _roles =
@@ -64,13 +67,13 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
     public IReadOnlyList<Player> Players => _gameState.Players;
     public Player CurPlayer => _gameState.CurrentPlayer;
     public Card? TopDiscardedCard => _gameState.CardDeck.TopDiscardedCard;
-    public List<Player> LivePlayers => _gameState.LivePlayers;
+    public IReadOnlyList<Player> LivePlayers => _gameState.LivePlayers;
     public IReadOnlyList<Player> DeadPlayers => _gameState.DeadPlayers;
 
     public void GameInit(IEnumerable<Guid> playerIds)
     {
-        var enumerable = playerIds.ToList();
-        if (enumerable.Count is < 4 or > 7)
+        List<Guid> enumerable = [.. playerIds];
+        if (enumerable.Count is < MinPlayerCount or > MaxPlayerCount)
             throw new WrongNumberOfPlayersException(enumerable.Count);
         if (enumerable.Distinct().Count() != enumerable.Count)
             throw new NotUniqueIdsException();
@@ -124,7 +127,8 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
         }
         var isIndians = curCard.Name is CardName.Indians;
         var rc = curCard.Play(_gameState);
-        if (rc is not CardRc.Ok) return rc;
+        if (rc is not CardRc.Ok)
+            return rc;
         DiscardCard(curCard.Id);
         if (isIndians)
             return CheckEndGame();
@@ -132,7 +136,7 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
             switch (player.Role)
             {
                 case PlayerRole.Outlaw:
-                    for (var i = 0; i < 3; ++i)
+                    for (var i = 0; i < OutlawRewardCardCount; ++i)
                         CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
                     break;
                 case PlayerRole.DeputySheriff when CurPlayer.Role is PlayerRole.Sheriff:
@@ -140,8 +144,9 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
                     break;
                 case PlayerRole.Renegade:
                 case PlayerRole.Sheriff:
-                default:
                     break;
+                default:
+                    throw new NotExistingRoleException();
             }
         return CheckEndGame();
     }
@@ -150,12 +155,12 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
 
     public CardRc EndTurn()
     {
-        var i = 0;
+        var isFirstIteration = true;
         while (true)
         {
-            if (i == 0 && CurPlayer.CardsInHand.Count > CurPlayer.Health)
+            if (isFirstIteration && CurPlayer.CardsInHand.Count > CurPlayer.Health)
                 return CardRc.CantEndTurn;
-            ++i;
+            isFirstIteration = false;
             CurPlayer.EndTurn();
             _gameState.NextPlayer();
             Card? card;
@@ -165,12 +170,11 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.BeerBarrel)) is not null)
                 ((BeerBarrel)card).ApplyEffect(_gameState);
 
+            var rc = CheckEndGame();
+            if (rc is not CardRc.Ok)
+                return rc;
             if (CurPlayer.IsDead)
-            {
-                var rc = CheckEndGame();
-                if (rc is not CardRc.Ok) return rc;
                 continue;
-            }
             
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Jail)) is not null && 
                 ((Jail)card).ApplyEffect(_gameState))
@@ -197,8 +201,6 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
             PlayerClear(player.Id);
             player.DeadEarlier();
         }
-        
-        _gameState.FixIndex();
 
         return CardRc.Ok;
     }

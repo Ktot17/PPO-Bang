@@ -116,7 +116,7 @@ public class PlayerTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
         var cardRepoMock = new Mock<ICardRepository>();
-        cardRepoMock.Setup(repo => repo.GetAll()).Returns([]);
+        cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
         players[0].AddCardInHand(CardFactory.CreateCard(CardName.Beer, CardSuit.Clubs, CardRank.Ace));
         var rc = players[0].ApplyDamage(5, new GameState(players, new Deck(cardRepoMock.Object), players[0].Id, null!));
         Assert.True(rc);
@@ -135,7 +135,7 @@ public class PlayerTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
         var cardRepoMock = new Mock<ICardRepository>();
-        cardRepoMock.Setup(repo => repo.GetAll()).Returns([]);
+        cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
         players[0].AddCardInHand(CardFactory.CreateCard(CardName.Beer, CardSuit.Clubs, CardRank.Ace));
         players[0].AddCardInHand(CardFactory.CreateCard(CardName.Beer, CardSuit.Clubs, CardRank.Ace));
         players[0].AddCardInHand(CardFactory.CreateCard(CardName.Beer, CardSuit.Clubs, CardRank.Ace));
@@ -154,7 +154,7 @@ public class PlayerTests
             new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
         ]);
         var cardRepoMock = new Mock<ICardRepository>();
-        cardRepoMock.Setup(repo => repo.GetAll()).Returns([]);
+        cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
         players[0].AddCardInHand(CardFactory.CreateCard(CardName.Beer, CardSuit.Clubs, CardRank.Ace));
         var rc = players[0].ApplyDamage(5, new GameState(players, new Deck(cardRepoMock.Object), players[0].Id, null!));
         Assert.False(rc);

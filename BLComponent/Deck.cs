@@ -12,7 +12,7 @@ public sealed class Deck
 
     internal Deck(ICardRepository cardRepository)
     {
-        var cards = cardRepository.GetAll();
+        var cards = cardRepository.GetAll;
         Shuffle(cards);
         foreach (var card in cards)
             _drawPile.Push(card);
@@ -20,7 +20,8 @@ public sealed class Deck
 
     internal Card Draw()
     {
-        if (_drawPile.Count != 0) return _drawPile.Pop();
+        if (_drawPile.Count != 0)
+            return _drawPile.Pop();
         Shuffle(_discardPile);
         foreach (var card in _discardPile)
             _drawPile.Push(card);
@@ -33,7 +34,7 @@ public sealed class Deck
         _discardPile.Add(card);
     }
 
-    private void Shuffle(List<Card> cards)
+    private void Shuffle(IList<Card> cards)
     {
         var n = cards.Count;
         while (n > 1)

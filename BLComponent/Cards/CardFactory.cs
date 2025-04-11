@@ -2,34 +2,32 @@
 
 public static class CardFactory
 {
-    public static Card CreateCard(CardName name, CardSuit suit, CardRank rank)
+    private static readonly Dictionary<CardName, Func<CardSuit, CardRank, Card>> FactoryDictionary = new()
     {
-        return name switch
-        {
-            CardName.Bang => new Bang(suit, rank),
-            CardName.Beer => new Beer(suit, rank),
-            CardName.Missed => new Missed(suit, rank),
-            CardName.Panic => new Panic(suit, rank),
-            CardName.GeneralStore => new GeneralStore(suit, rank),
-            CardName.Indians => new Indians(suit, rank),
-            CardName.Duel => new Duel(suit, rank),
-            CardName.Gatling => new Gatling(suit, rank),
-            CardName.CatBalou => new CatBalou(suit, rank),
-            CardName.Saloon => new Saloon(suit, rank),
-            CardName.Stagecoach => new Stagecoach(suit, rank),
-            CardName.WellsFargo => new WellsFargo(suit, rank),
-            CardName.Barrel => new Barrel(suit, rank),
-            CardName.Scope => new Scope(suit, rank),
-            CardName.Mustang => new Mustang(suit, rank),
-            CardName.Dynamite => new Dynamite(suit, rank),
-            CardName.BeerBarrel => new BeerBarrel(suit, rank),
-            CardName.Jail => new Jail(suit, rank),
-            CardName.Volcanic => new Volcanic(suit, rank),
-            CardName.Schofield => new Schofield(suit, rank),
-            CardName.Remington => new Remington(suit, rank),
-            CardName.Carabine => new Carabine(suit, rank),
-            CardName.Winchester => new Winchester(suit, rank),
-            _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
-        };
-    }
+        [CardName.Bang] = (s, r) => new Bang(s, r),
+        [CardName.Beer] = (s, r) => new Beer(s, r),
+        [CardName.Missed] = (s, r) => new Missed(s, r),
+        [CardName.Panic] = (s, r) => new Panic(s, r),
+        [CardName.GeneralStore] = (s, r) => new GeneralStore(s, r),
+        [CardName.Indians] = (s, r) => new Indians(s, r),
+        [CardName.Duel] = (s, r) => new Duel(s, r),
+        [CardName.Gatling] = (s, r) => new Gatling(s, r),
+        [CardName.CatBalou] = (s, r) => new CatBalou(s, r),
+        [CardName.Saloon] = (s, r) => new Saloon(s, r),
+        [CardName.Stagecoach] = (s, r) => new Stagecoach(s, r),
+        [CardName.WellsFargo] = (s, r) => new WellsFargo(s, r),
+        [CardName.Barrel] = (s, r) => new Barrel(s, r),
+        [CardName.Scope] = (s, r) => new Scope(s, r),
+        [CardName.Mustang] = (s, r) => new Mustang(s, r),
+        [CardName.Dynamite] = (s, r) => new Dynamite(s, r),
+        [CardName.BeerBarrel] = (s, r) => new BeerBarrel(s, r),
+        [CardName.Jail] = (s, r) => new Jail(s, r),
+        [CardName.Volcanic] = (s, r) => new Volcanic(s, r),
+        [CardName.Schofield] = (s, r) => new Schofield(s, r),
+        [CardName.Remington] = (s, r) => new Remington(s, r),
+        [CardName.Carabine] = (s, r) => new Carabine(s, r),
+        [CardName.Winchester] = (s, r) => new Winchester(s, r)
+    };
+    
+    public static Card CreateCard(CardName name, CardSuit suit, CardRank rank) => FactoryDictionary[name].Invoke(suit, rank);
 }

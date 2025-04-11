@@ -11,7 +11,7 @@ public class GameManagerTests
 
     private void FillDeck(int cardCount = 80, CardSuit suit = CardSuit.Diamonds)
     {
-        _cardRepoMock.Setup(repo => repo.GetAll()).Returns(() =>
+        _cardRepoMock.Setup(repo => repo.GetAll).Returns(() =>
         {
             var deck = new List<Card>();
             for (var i = 0; i < cardCount; ++i)
@@ -61,12 +61,7 @@ public class GameManagerTests
         gameManager.GameInit(players);
         Assert.Equal(expectedRoles, gameManager.Players.Select(p => p.Role).Order());
         foreach (var player in gameManager.Players)
-        {
-            if (player.Role == PlayerRole.Sheriff)
-                Assert.Equal(player.Health + 2, player.CardsInHand.Count);
-            else
-                Assert.Equal(player.Health, player.CardsInHand.Count);
-        }
+            Assert.Equal(player.Role == PlayerRole.Sheriff ? player.Health + 2 : player.Health, player.CardsInHand.Count);
     }
 
     [Fact]
@@ -81,12 +76,7 @@ public class GameManagerTests
         gameManager.GameInit(players);
         Assert.Equal(expectedRoles, gameManager.Players.Select(p => p.Role).Order());
         foreach (var player in gameManager.Players)
-        {
-            if (player.Role == PlayerRole.Sheriff)
-                Assert.Equal(player.Health + 2, player.CardsInHand.Count);
-            else
-                Assert.Equal(player.Health, player.CardsInHand.Count);
-        }
+            Assert.Equal(player.Role == PlayerRole.Sheriff ? player.Health + 2 : player.Health, player.CardsInHand.Count);
     }
     
     [Fact]
@@ -102,12 +92,7 @@ public class GameManagerTests
         gameManager.GameInit(players);
         Assert.Equal(expectedRoles, gameManager.Players.Select(p => p.Role).Order());
         foreach (var player in gameManager.Players)
-        {
-            if (player.Role == PlayerRole.Sheriff)
-                Assert.Equal(player.Health + 2, player.CardsInHand.Count);
-            else
-                Assert.Equal(player.Health, player.CardsInHand.Count);
-        }
+            Assert.Equal(player.Role == PlayerRole.Sheriff ? player.Health + 2 : player.Health, player.CardsInHand.Count);
     }
     
     [Fact]
@@ -123,12 +108,7 @@ public class GameManagerTests
         gameManager.GameInit(players);
         Assert.Equal(expectedRoles, gameManager.Players.Select(p => p.Role).Order());
         foreach (var player in gameManager.Players)
-        {
-            if (player.Role == PlayerRole.Sheriff)
-                Assert.Equal(player.Health + 2, player.CardsInHand.Count);
-            else
-                Assert.Equal(player.Health, player.CardsInHand.Count);
-        }
+            Assert.Equal(player.Role == PlayerRole.Sheriff ? player.Health + 2 : player.Health, player.CardsInHand.Count);
     }
 
     [Fact]

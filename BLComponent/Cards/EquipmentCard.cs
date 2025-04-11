@@ -32,7 +32,8 @@ public sealed class Barrel : NotJail
         state.CardDeck.Discard(card);
         var player = state.Players.First(p => p.Id == playerId);
         var barrel = player.CardsOnBoard.First(c => c.Name == Name);
-        if (card.Suit is not CardSuit.Hearts) return false;
+        if (card.Suit is not CardSuit.Hearts)
+            return false;
         state.CardDeck.Discard(player.RemoveCard(barrel.Id));
         return true;
     }
@@ -56,6 +57,8 @@ public sealed class Mustang : NotJail
 
 public sealed class Dynamite : NotJail
 {
+    private const int DynamiteDamage = 3;
+    
     public Dynamite(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Dynamite;
@@ -72,7 +75,7 @@ public sealed class Dynamite : NotJail
             state.GetNextPlayer().AddCardOnBoard(dynamite);
         else
         {
-            player.ApplyDamage(3, state);
+            player.ApplyDamage(DynamiteDamage, state);
             state.CardDeck.Discard(dynamite);
         }
     }
@@ -80,6 +83,8 @@ public sealed class Dynamite : NotJail
 
 public sealed class BeerBarrel : NotJail
 {
+    private const int BeerBarrelHeal = 2;
+    
     public BeerBarrel(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.BeerBarrel;
@@ -96,7 +101,7 @@ public sealed class BeerBarrel : NotJail
             state.GetNextPlayer().AddCardOnBoard(beerBarrel);
         else
         {
-            player.Heal(2);
+            player.Heal(BeerBarrelHeal);
             state.CardDeck.Discard(beerBarrel);
         }
     }

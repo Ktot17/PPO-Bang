@@ -30,9 +30,9 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
     internal Card RemoveCard(Guid cardId)
     {
         Card? removedCard;
-        if ((removedCard = _cardsInHand.FirstOrDefault(c => c.Id == cardId)) != null)
+        if ((removedCard = _cardsInHand.Find(c => c.Id == cardId)) != null)
             _cardsInHand.Remove(removedCard);
-        else if ((removedCard = _cardsOnBoard.FirstOrDefault(c => c.Id == cardId)) != null)
+        else if ((removedCard = _cardsOnBoard.Find(c => c.Id == cardId)) != null)
             _cardsOnBoard.Remove(removedCard);
         else if (Weapon != null && cardId == Weapon.Id)
         {
@@ -55,10 +55,11 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
     internal bool ApplyDamage(int damage, GameState state)
     {
         Health -= damage;
-        if (Health > 0) return true;
+        if (Health > 0)
+            return true;
         while (Health != 1)
         {
-            var card = _cardsInHand.FirstOrDefault(c => c.Name == CardName.Beer);
+            var card = _cardsInHand.Find(c => c.Name == CardName.Beer);
             if (card == null)
             {
                 IsDeadOnThisTurn = true;
@@ -82,7 +83,8 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
     {
         Health += healAmount;
         var rc = Health > MaxHealth;
-        if (rc) Health = MaxHealth;
+        if (rc)
+            Health = MaxHealth;
         return rc;
     }
 }

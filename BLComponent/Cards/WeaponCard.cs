@@ -20,45 +20,55 @@ public abstract class WeaponCard : Card
 
 public sealed class Volcanic : WeaponCard
 {
+    private const int VolcanicRange = 1;
+    
     public Volcanic(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Volcanic;
-        Range = 1;
+        Range = VolcanicRange;
     }
 }
 
 public sealed class Schofield : WeaponCard
 {
+    private const int SchofieldRange = 2;
+    
     public Schofield(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Schofield;
-        Range = 2;
+        Range = SchofieldRange;
     }
 }
 
 public sealed class Remington : WeaponCard
 {
+    private const int RemingtonRange = 3;
+    
     public Remington(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Remington;
-        Range = 3;
+        Range = RemingtonRange;
     }
 }
 
 public sealed class Carabine : WeaponCard
 {
+    private const int CarabineRange = 4;
+    
     public Carabine(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Carabine;
-        Range = 4;
+        Range = CarabineRange;
     }
 }
 
 public sealed class Winchester : WeaponCard
 {
+    private const int WinchesterRange = 5;
+    
     public Winchester(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Winchester;
-        Range = 5;
+        Range = WinchesterRange;
     }
 }

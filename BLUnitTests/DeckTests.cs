@@ -10,7 +10,7 @@ public class DeckTests
     public void Deck_Tests()
     {
         var cardRepo = new Mock<ICardRepository>();
-        cardRepo.Setup(repo => repo.GetAll()).Returns([
+        cardRepo.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Hearts, CardRank.Ace),
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Seven)
         ]);

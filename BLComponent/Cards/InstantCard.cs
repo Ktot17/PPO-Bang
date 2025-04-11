@@ -22,7 +22,7 @@ public sealed class Bang : InstantCard
             return CardRc.CantPlay;
         var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
-        if (state.Players.FirstOrDefault(p => p.Id == playerId) == null)
+        if (state.Players.Find(p => p.Id == playerId) == null)
             throw new NotExistingGuidException();
         if (player.Range < state.GetRange(state.CurrentPlayerId, playerId))
             return CardRc.TooFar;
@@ -242,6 +242,8 @@ public sealed class CatBalou : InstantCard
 
 public sealed class Saloon : InstantCard
 {
+    private const int PlayerHealAmount = 1;
+    
     public Saloon(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Saloon;
@@ -250,7 +252,7 @@ public sealed class Saloon : InstantCard
     internal override CardRc Play(GameState state)
     {
         foreach (var player in state.LivePlayers)
-            player.Heal(player == state.CurrentPlayer ? 2 : 1);
+            player.Heal(player == state.CurrentPlayer ? PlayerHealAmount + 1 : PlayerHealAmount);
 
         return CardRc.Ok;
     }
@@ -258,6 +260,8 @@ public sealed class Saloon : InstantCard
 
 public sealed class Stagecoach : InstantCard
 {
+    private const int CardDrawCount = 2;
+    
     public Stagecoach(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Stagecoach;
@@ -265,7 +269,7 @@ public sealed class Stagecoach : InstantCard
 
     internal override CardRc Play(GameState state)
     {
-        for (var i = 0; i < 2; i++)
+        for (var i = 0; i < CardDrawCount; i++)
         {
             var card = state.CardDeck.Draw();
             state.CurrentPlayer.AddCardInHand(card);
@@ -276,6 +280,8 @@ public sealed class Stagecoach : InstantCard
 
 public sealed class WellsFargo : InstantCard
 {
+    private const int CardDrawCount = 3;
+    
     public WellsFargo(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.WellsFargo;
@@ -283,7 +289,7 @@ public sealed class WellsFargo : InstantCard
 
     internal override CardRc Play(GameState state)
     {
-        for (var i = 0; i < 3; i++)
+        for (var i = 0; i < CardDrawCount; i++)
         {
             var card = state.CardDeck.Draw();
             state.CurrentPlayer.AddCardInHand(card);

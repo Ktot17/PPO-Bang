@@ -2,5 +2,5 @@
 
 public interface ICardRepository
 {
-    List<Card> GetAll();
+    public IList<Card> GetAll { get; }
 }
