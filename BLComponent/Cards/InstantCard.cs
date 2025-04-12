@@ -110,6 +110,7 @@ public sealed class GeneralStore : InstantCard
         for (var i = 0; i < state.LivePlayers.Count; i++)
             cards.Add(state.CardDeck.Draw());
         var playerId = state.CurrentPlayerId;
+        var chosenCards = new List<Card>();
         do
         {
             var cardId = state.Get.GetCardId(cards, 0, state.CurrentPlayerId);
@@ -120,10 +121,17 @@ public sealed class GeneralStore : InstantCard
             }
             catch (InvalidOperationException)
             {
+                state.CardDeck.ReturnCardsToDeck(cards);
                 throw new NotExistingGuidException();
             }
-            state.CurrentPlayer.AddCardInHand(card);
-            cards.Remove(card);
+            chosenCards.Add(card);
+            state.NextPlayer();
+        } while (playerId != state.CurrentPlayerId);
+
+        var j = 0;
+        do
+        {
+            state.CurrentPlayer.AddCardInHand(chosenCards[j++]);
             state.NextPlayer();
         } while (playerId != state.CurrentPlayerId);
         return CardRc.Ok;

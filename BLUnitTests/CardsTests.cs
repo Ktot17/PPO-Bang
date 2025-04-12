@@ -258,9 +258,9 @@ public class CardsTests
         var deck = new Deck(_cardRepoMock.Object);
         var cards = deck.DrawPile();
         _getMock.Setup(get => get.GetCardId(cards, 0, players[0].Id)).Returns(cards[0].Id);
-        _getMock.Setup(get => get.GetCardId(cards.Skip(1).ToList(), 0, players[1].Id)).Returns(cards[1].Id);
-        _getMock.Setup(get => get.GetCardId(cards.Skip(2).ToList(), 0, players[2].Id)).Returns(cards[2].Id);
-        _getMock.Setup(get => get.GetCardId(cards.Skip(3).ToList(), 0, players[3].Id)).Returns(cards[3].Id);
+        _getMock.Setup(get => get.GetCardId(cards, 0, players[1].Id)).Returns(cards[1].Id);
+        _getMock.Setup(get => get.GetCardId(cards, 0, players[2].Id)).Returns(cards[2].Id);
+        _getMock.Setup(get => get.GetCardId(cards, 0, players[3].Id)).Returns(cards[3].Id);
         var rc = generalStore.Play(new GameState(players, deck, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.Ok, rc);
         foreach (var player in players)

@@ -56,4 +56,10 @@ public sealed class Deck
         _drawPile.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Seven));
         _drawPile.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Seven));
     }
+
+    internal void ReturnCardsToDeck(IEnumerable<Card> cards)
+    {
+        foreach (var card in cards.Reverse())
+            _drawPile.Push(card);
+    }
 }
