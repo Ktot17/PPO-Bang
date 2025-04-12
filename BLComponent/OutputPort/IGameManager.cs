@@ -2,6 +2,11 @@
 
 public interface IGameManager
 {
+    private const int MinPlayersCountConst = 4;
+    private const int MaxPlayersCountConst = 7;
+    public static int MinPlayersCount => MinPlayersCountConst;
+    public static int MaxPlayersCount => MaxPlayersCountConst;
+    
     public void GameInit(IEnumerable<Guid> playerIds);
     public CardRc PlayCard(Guid cardId);
     public void DiscardCard(Guid cardId);

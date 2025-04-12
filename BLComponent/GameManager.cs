@@ -24,11 +24,11 @@ internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentP
 
     internal int GetRange(Guid playerId, Guid targetId)
     {
-        var playerIndex = Players.FindIndex(p => p.Id == playerId);
-        var targetIndex = Players.FindIndex(p => p.Id == targetId);
-        var add = Players[targetIndex].CardsOnBoard.Any(c => c.Name == CardName.Mustang) ? 1 : 0;
-        var sub = Players[playerIndex].CardsOnBoard.Any(c => c.Name == CardName.Scope) ? 1 : 0;
-        return int.Min(Players.Count - int.Abs(playerIndex - targetIndex), int.Abs(playerIndex - targetIndex)) + add - sub;
+        var playerIndex = LivePlayers.ToList().FindIndex(p => p.Id == playerId);
+        var targetIndex = LivePlayers.ToList().FindIndex(p => p.Id == targetId);
+        var add = LivePlayers[targetIndex].CardsOnBoard.Any(c => c.Name == CardName.Mustang) ? 1 : 0;
+        var sub = LivePlayers[playerIndex].CardsOnBoard.Any(c => c.Name == CardName.Scope) ? 1 : 0;
+        return int.Min(LivePlayers.Count - int.Abs(playerIndex - targetIndex), int.Abs(playerIndex - targetIndex)) + add - sub;
     }
 
     internal Player GetNextPlayer()
@@ -53,8 +53,6 @@ internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentP
 
 public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGameManager
 {
-    private const int MinPlayerCount = 4;
-    private const int MaxPlayerCount = 7;
     private const int OutlawRewardCardCount = 3;
     
     private GameState _gameState = null!;
@@ -73,7 +71,8 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
     public void GameInit(IEnumerable<Guid> playerIds)
     {
         List<Guid> enumerable = [.. playerIds];
-        if (enumerable.Count is < MinPlayerCount or > MaxPlayerCount)
+        if (enumerable.Count < IGameManager.MinPlayersCount ||
+            enumerable.Count > IGameManager.MaxPlayersCount)
             throw new WrongNumberOfPlayersException(enumerable.Count);
         if (enumerable.Distinct().Count() != enumerable.Count)
             throw new NotUniqueIdsException();
