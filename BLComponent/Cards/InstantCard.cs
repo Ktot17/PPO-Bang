@@ -73,12 +73,8 @@ public sealed class Panic : InstantCard
     {
         var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
-        Player? target;
-        try
-        {
-            target = state.Players.First(p => p.Id == playerId);
-        }
-        catch (InvalidOperationException)
+        var target = state.Players.Find(p => p.Id == playerId);
+        if (target is null)
         {
             throw new NotExistingGuidException();
         }
@@ -109,31 +105,29 @@ public sealed class GeneralStore : InstantCard
         var cards = new List<Card>();
         for (var i = 0; i < state.LivePlayers.Count; i++)
             cards.Add(state.CardDeck.Draw());
-        var playerId = state.CurrentPlayerId;
         var chosenCards = new List<Card>();
-        do
+        var j = 0;
+        while (j < state.LivePlayers.Count)
         {
-            var cardId = state.Get.GetCardId(cards, 0, state.CurrentPlayerId);
-            Card? card;
-            try
+            var cardId = state.Get.GetCardId([.. cards.Except(chosenCards)],
+                0, state.CurrentPlayerId);
+            var card = cards.Find(c => c.Id == cardId);
+            if (card is null)
             {
-                card = cards.First(c => c.Id == cardId);
+                state.Get.GeneralStoreError();
+                continue;
             }
-            catch (InvalidOperationException)
-            {
-                state.CardDeck.ReturnCardsToDeck(cards);
-                throw new NotExistingGuidException();
-            }
+
             chosenCards.Add(card);
             state.NextPlayer();
-        } while (playerId != state.CurrentPlayerId);
+            ++j;
+        }
 
-        var j = 0;
-        do
+        for (var i = 0; i < state.LivePlayers.Count; i++)
         {
-            state.CurrentPlayer.AddCardInHand(chosenCards[j++]);
+            state.CurrentPlayer.AddCardInHand(chosenCards[i]);
             state.NextPlayer();
-        } while (playerId != state.CurrentPlayerId);
+        }
         return CardRc.Ok;
     }
 }
@@ -176,15 +170,9 @@ public sealed class Duel : InstantCard
     {
         var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
-        Player? target;
-        try
-        {
-            target = state.Players.First(p => p.Id == playerId);
-        }
-        catch (InvalidOperationException)
-        {
+        var target = state.Players.Find(p => p.Id == playerId);
+        if (target is null)
             throw new NotExistingGuidException();
-        }
         var curPlayer = target;
         while (curPlayer.CardsInHand.FirstOrDefault(c => c.Name == CardName.Bang) is { } card)
         {
@@ -226,15 +214,9 @@ public sealed class CatBalou : InstantCard
     {
         var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
-        Player? target;
-        try
-        {
-            target = state.Players.First(p => p.Id == playerId);
-        }
-        catch (InvalidOperationException)
-        {
+        var target = state.Players.Find(p => p.Id == playerId);
+        if (target is null)
             throw new NotExistingGuidException();
-        }
         if (target.CardCount == 0)
             return CardRc.CantPlay;
         var cards = new List<Card?>();

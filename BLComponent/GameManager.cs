@@ -9,6 +9,7 @@ public interface IGet
     public Guid GetPlayerId(IReadOnlyList<Player> players, Guid currentPlayerId);
     public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount) => GetCardId(cards, unknownCardsCount, null);
     public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount, Guid? playerId);
+    public void GeneralStoreError();
 }
 
 internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentPlayerId, IGet get)
@@ -115,15 +116,9 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
 
     public CardRc PlayCard(Guid cardId)
     {
-        Card? curCard;
-        try
-        {
-            curCard = CurPlayer.CardsInHand.First(c => c.Id == cardId);
-        }
-        catch (InvalidOperationException)
-        {
+        var curCard = CurPlayer.CardsInHand.FirstOrDefault(c => c.Id == cardId);
+        if (curCard is null)
             throw new NotExistingGuidException();
-        }
         var isIndians = curCard.Name is CardName.Indians;
         var rc = curCard.Play(_gameState);
         if (rc is not CardRc.Ok)

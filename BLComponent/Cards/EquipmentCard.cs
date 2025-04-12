@@ -118,15 +118,9 @@ public sealed class Jail : EquipmentCard
     {
         var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
-        Player? target;
-        try
-        {
-            target = state.Players.First(p => p.Id == playerId);
-        }
-        catch (InvalidOperationException)
-        {
+        var target = state.Players.Find(p => p.Id == playerId);
+        if (target is null)
             throw new NotExistingGuidException();
-        }
         if (target.CardsOnBoard.Any(c => c.Name == Name) ||
             target.Role is PlayerRole.Sheriff)
             return CardRc.CantPlay;

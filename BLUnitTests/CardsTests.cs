@@ -238,6 +238,36 @@ public class CardsTests
         Assert.Empty(players[1].CardsInHand);
         Assert.Single(players[0].CardsInHand);
     }
+    
+    [Fact]
+    public void Play_GeneralStoreWrongCardTest()
+    {
+        var generalStore = (GeneralStore)CardFactory.CreateCard(CardName.GeneralStore, CardSuit.Clubs, CardRank.Ace);
+        var players = new List<Player>([
+            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+        ]);
+        _cardRepoMock.Setup(repo => repo.GetAll).Returns([
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
+        ]);
+        var deck = new Deck(_cardRepoMock.Object);
+        var cards = deck.DrawPile();
+        _getMock.SetupSequence(get => get.GetCardId(cards, 0, players[0].Id)).Returns(Guid.Empty)
+            .Returns(cards[0].Id);
+        _getMock.Setup(get => get.GetCardId(cards.Skip(1).ToList(), 0, players[1].Id)).Returns(cards[1].Id);
+        _getMock.SetupSequence(get => get.GetCardId(cards.Skip(2).ToList(), 0, players[2].Id)).Returns(Guid.Empty)
+            .Returns(Guid.Empty).Returns(cards[2].Id);
+        _getMock.Setup(get => get.GetCardId(cards.Skip(3).ToList(), 0, players[3].Id)).Returns(cards[3].Id);
+        var rc = generalStore.Play(new GameState(players, deck, players[0].Id, _getMock.Object));
+        Assert.Equal(CardRc.Ok, rc);
+        foreach (var player in players)
+            Assert.Single(player.CardsInHand);
+    }
 
     [Fact]
     public void Play_GeneralStoreOkTest()
@@ -258,9 +288,9 @@ public class CardsTests
         var deck = new Deck(_cardRepoMock.Object);
         var cards = deck.DrawPile();
         _getMock.Setup(get => get.GetCardId(cards, 0, players[0].Id)).Returns(cards[0].Id);
-        _getMock.Setup(get => get.GetCardId(cards, 0, players[1].Id)).Returns(cards[1].Id);
-        _getMock.Setup(get => get.GetCardId(cards, 0, players[2].Id)).Returns(cards[2].Id);
-        _getMock.Setup(get => get.GetCardId(cards, 0, players[3].Id)).Returns(cards[3].Id);
+        _getMock.Setup(get => get.GetCardId(cards.Skip(1).ToList(), 0, players[1].Id)).Returns(cards[1].Id);
+        _getMock.Setup(get => get.GetCardId(cards.Skip(2).ToList(), 0, players[2].Id)).Returns(cards[2].Id);
+        _getMock.Setup(get => get.GetCardId(cards.Skip(3).ToList(), 0, players[3].Id)).Returns(cards[3].Id);
         var rc = generalStore.Play(new GameState(players, deck, players[0].Id, _getMock.Object));
         Assert.Equal(CardRc.Ok, rc);
         foreach (var player in players)
@@ -718,17 +748,9 @@ public class CardsTests
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace);
         var jail = (Jail)CardFactory.CreateCard(CardName.Jail, CardSuit.Clubs, CardRank.Ace);
         var duel = (Duel)CardFactory.CreateCard(CardName.Duel, CardSuit.Clubs, CardRank.Ace);
-        var generalStore = (GeneralStore)CardFactory.CreateCard(CardName.GeneralStore, CardSuit.Clubs, CardRank.Ace);
         var panic = (Panic)CardFactory.CreateCard(CardName.Panic, CardSuit.Clubs, CardRank.Ace);
         var catBalou = (CatBalou)CardFactory.CreateCard(CardName.CatBalou, CardSuit.Clubs, CardRank.Ace);
         
-        _cardRepoMock.Setup(repo => repo.GetAll).Returns([
-            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
-            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
-            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
-            CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
-        ]);
-        var deck = new Deck(_cardRepoMock.Object);
         _getMock.Setup(get => get.GetPlayerId(players.Skip(1).ToList(), players[0].Id)).Returns(Guid.Empty);
         _getMock.Setup(get => get.GetCardId(null!, players[1].CardsInHand.Count))
             .Returns(Guid.Empty);
@@ -739,8 +761,6 @@ public class CardsTests
             jail.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
         Assert.Throws<NotExistingGuidException>(() =>
             duel.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
-        Assert.Throws<NotExistingGuidException>(() =>
-            generalStore.Play(new GameState(players, deck, players[0].Id, _getMock.Object)));
         Assert.Throws<NotExistingGuidException>(() =>
             panic.Play(new GameState(players, null!, players[0].Id, _getMock.Object)));
         Assert.Throws<NotExistingGuidException>(() =>
