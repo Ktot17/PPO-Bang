@@ -16,12 +16,21 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
     public int Range => Weapon?.Range ?? 1;
     public bool IsDeadOnThisTurn { get; private set; }
 
-    internal void AddCardInHand(Card card) => _cardsInHand.Add(card);
-
-    internal void AddCardOnBoard(Card card) => _cardsOnBoard.Add(card);
-
-    internal WeaponCard? ChangeWeapon(WeaponCard weapon)
+    internal void AddCardInHand(Card card, IGameView gameView)
     {
+        gameView.CardAddedInHand(card.Id, Id);
+        _cardsInHand.Add(card);
+    }
+
+    internal void AddCardOnBoard(Card card, IGameView gameView)
+    {
+        gameView.CardAddedOnBoard(card.Id, Id);
+        _cardsOnBoard.Add(card);
+    }
+
+    internal WeaponCard? ChangeWeapon(WeaponCard weapon, IGameView gameView)
+    {
+        gameView.WeaponAdded(weapon.Id, Id);
         var removedWeapon = Weapon;
         Weapon = weapon;
         return removedWeapon;
@@ -30,11 +39,11 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
     internal Card RemoveCard(Guid cardId)
     {
         Card? removedCard;
-        if ((removedCard = _cardsInHand.Find(c => c.Id == cardId)) != null)
+        if ((removedCard = _cardsInHand.Find(c => c.Id == cardId)) is not null)
             _cardsInHand.Remove(removedCard);
-        else if ((removedCard = _cardsOnBoard.Find(c => c.Id == cardId)) != null)
+        else if ((removedCard = _cardsOnBoard.Find(c => c.Id == cardId)) is not null)
             _cardsOnBoard.Remove(removedCard);
-        else if (Weapon != null && cardId == Weapon.Id)
+        else if (Weapon is not null && cardId == Weapon.Id)
         {
             removedCard = Weapon;
             Weapon = null;
@@ -50,9 +59,9 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
 
     internal void EndTurn() => IsBangPlayed = false;
     
-    public int CardCount => _cardsInHand.Count + _cardsOnBoard.Count + (Weapon == null ? 0 : 1);
+    public int CardCount => _cardsInHand.Count + _cardsOnBoard.Count + (Weapon is null ? 0 : 1);
 
-    internal bool ApplyDamage(int damage, GameState state)
+    internal async Task<bool> ApplyDamage(int damage, GameState state)
     {
         Health -= damage;
         if (Health > 0)
@@ -60,18 +69,18 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
         while (Health != 1)
         {
             var card = _cardsInHand.Find(c => c.Name == CardName.Beer);
-            if (card == null)
+            if (card is null)
             {
                 IsDeadOnThisTurn = true;
                 return false;
             }
 
             _cardsInHand.Remove(card);
-            if (card.Play(state) is CardRc.Ok)
-                state.CardDeck.Discard(card);
+            if (await card.Play(state) is CardRc.Ok)
+                state.CardDeck.Discard(card, state.GameView);
             else
             {
-                AddCardInHand(card);
+                AddCardInHand(card, state.GameView);
                 IsDeadOnThisTurn = true;
                 return false;
             }

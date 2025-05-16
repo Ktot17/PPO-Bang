@@ -14,23 +14,25 @@ public class DeckTests
             CardFactory.CreateCard(CardName.Bang, CardSuit.Hearts, CardRank.Ace),
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Seven)
         ]);
+        var gameView = new Mock<IGameView>();
+        gameView.Setup(get => get.CardDiscarded(It.IsAny<Guid>()));
         var deck = new Deck(cardRepo.Object);
-        Assert.Equal(2, deck.DrawPile().Count);
+        Assert.Equal(2, deck.DrawPile.Count);
         Assert.Null(deck.TopDiscardedCard);
-        var card1 = deck.Draw();
-        Assert.Single(deck.DrawPile());
+        var card1 = deck.Draw(gameView.Object);
+        Assert.Single(deck.DrawPile);
         Assert.Null(deck.TopDiscardedCard);
-        var card2 = deck.Draw();
-        Assert.Empty(deck.DrawPile());
+        var card2 = deck.Draw(gameView.Object);
+        Assert.Empty(deck.DrawPile);
         Assert.Null(deck.TopDiscardedCard);
-        deck.Discard(card1);
-        Assert.Empty(deck.DrawPile());
+        deck.Discard(card1, gameView.Object);
+        Assert.Empty(deck.DrawPile);
         Assert.NotNull(deck.TopDiscardedCard);
-        deck.Discard(card2);
-        Assert.Empty(deck.DrawPile());
+        deck.Discard(card2, gameView.Object);
+        Assert.Empty(deck.DrawPile);
         Assert.NotNull(deck.TopDiscardedCard);
-        deck.Draw();
-        Assert.Single(deck.DrawPile());
+        deck.Draw(gameView.Object);
+        Assert.Single(deck.DrawPile);
         Assert.Null(deck.TopDiscardedCard);
     }
 }

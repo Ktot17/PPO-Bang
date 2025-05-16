@@ -15,37 +15,41 @@ public sealed class Bang : InstantCard
         Name = CardName.Bang;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
         var player = state.CurrentPlayer;
         if (player.IsBangPlayed && (player.Weapon is null || player.Weapon.Name != CardName.Volcanic))
             return CardRc.CantPlay;
-        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+        var playerId = await state.GameView.GetPlayerIdAsync(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
-        if (state.Players.Find(p => p.Id == playerId) == null)
+        if (state.Players.Find(p => p.Id == playerId) is null)
             throw new NotExistingGuidException();
         if (player.Range < state.GetRange(state.CurrentPlayerId, playerId))
             return CardRc.TooFar;
         player.BangPlayed();
-        Shoot(state, playerId);
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name, false, playerId);
+        await Shoot(state, playerId);
         return CardRc.Ok;
     }
 }
 
 public sealed class Beer : InstantCard
 {
+    private const int NoBeerPlayerCount = 2;
+    
     public Beer(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Name = CardName.Beer;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override Task<CardRc> Play(GameState state)
     {
         var player = state.CurrentPlayer;
-        if (state.LivePlayers.Count <= 2 ||
+        if (state.LivePlayers.Count + (state.CurrentPlayer.IsDead ? 1 : 0) <= NoBeerPlayerCount ||
             player.Heal(1))
-            return CardRc.CantPlay;
-        return CardRc.Ok;
+            return Task.FromResult(CardRc.CantPlay);
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
+        return Task.FromResult(CardRc.Ok);
     }
 }
 
@@ -56,9 +60,9 @@ public sealed class Missed : InstantCard
         Name = CardName.Missed;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override Task<CardRc> Play(GameState state)
     {
-        return CardRc.CantPlay;
+        return Task.FromResult(CardRc.CantPlay);
     }
 }
 
@@ -69,9 +73,9 @@ public sealed class Panic : InstantCard
         Name = CardName.Panic;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
-        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+        var playerId = await state.GameView.GetPlayerIdAsync(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
         var target = state.Players.Find(p => p.Id == playerId);
         if (target is null)
@@ -86,9 +90,10 @@ public sealed class Panic : InstantCard
         cards.AddRange(target.CardsInHand);
         cards.AddRange(target.CardsOnBoard);
         cards.Add(target.Weapon);
-        var cardId = state.Get.GetCardId(cards, target.CardsInHand.Count);
+        var cardId = await state.GameView.GetCardIdAsync(cards, target.CardsInHand.Count);
         var card = target.RemoveCard(cardId);
-        state.CurrentPlayer.AddCardInHand(card);
+        state.CurrentPlayer.AddCardInHand(card, state.GameView);
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name, target.Id);
         return CardRc.Ok;
     }
 }
@@ -100,21 +105,21 @@ public sealed class GeneralStore : InstantCard
         Name = CardName.GeneralStore;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
         var cards = new List<Card>();
         for (var i = 0; i < state.LivePlayers.Count; i++)
-            cards.Add(state.CardDeck.Draw());
+            cards.Add(state.CardDeck.Draw(state.GameView));
         var chosenCards = new List<Card>();
         var j = 0;
         while (j < state.LivePlayers.Count)
         {
-            var cardId = state.Get.GetCardId([.. cards.Except(chosenCards)],
+            var cardId = await state.GameView.GetCardIdAsync([.. cards.Except(chosenCards)],
                 0, state.CurrentPlayerId);
             var card = cards.Find(c => c.Id == cardId);
             if (card is null)
             {
-                state.Get.GeneralStoreError();
+                state.GameView.ShowCardResult(state.CurrentPlayerId, Name, false);
                 continue;
             }
 
@@ -125,9 +130,10 @@ public sealed class GeneralStore : InstantCard
 
         for (var i = 0; i < state.LivePlayers.Count; i++)
         {
-            state.CurrentPlayer.AddCardInHand(chosenCards[i]);
+            state.CurrentPlayer.AddCardInHand(chosenCards[i], state.GameView);
             state.NextPlayer();
         }
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name, true);
         return CardRc.Ok;
     }
 }
@@ -139,20 +145,23 @@ public sealed class Indians : InstantCard
         Name = CardName.Indians;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
         foreach (var player in state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId))
         {
             var card = player.CardsInHand.FirstOrDefault(c => c.Name is CardName.Bang);
-            if (card == null)
+            if (await state.GameView.YesOrNoAsync(player.Id, CardName.Bang) && card is not null)
             {
-                player.ApplyDamage(1,
-                    new GameState(state.Players, state.CardDeck, player.Id, state.Get));
+                state.GameView.ShowCardResult(player.Id, Name, false);
+                player.RemoveCard(card.Id);
+                state.CardDeck.Discard(card, state.GameView);
             }
             else
             {
-                player.RemoveCard(card.Id);
-                state.CardDeck.Discard(card);
+                state.GameView.ShowCardResult(player.Id, Name, true);
+                await player.ApplyDamage(1,
+                    new GameState(state.Players, state.CardDeck, player.Id, state.GameView));
             }
         }
         return CardRc.Ok;
@@ -166,23 +175,27 @@ public sealed class Duel : InstantCard
         Name = CardName.Duel;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
-        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+        var playerId = await state.GameView.GetPlayerIdAsync(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
         var target = state.Players.Find(p => p.Id == playerId);
         if (target is null)
             throw new NotExistingGuidException();
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
         var curPlayer = target;
-        while (curPlayer.CardsInHand.FirstOrDefault(c => c.Name == CardName.Bang) is { } card)
+        while (await state.GameView.YesOrNoAsync(curPlayer.Id, CardName.Bang) &&
+               curPlayer.CardsInHand.FirstOrDefault(c => c.Name == CardName.Bang) is { } card)
         {
+            state.GameView.ShowCardResult(curPlayer.Id, Name, false);
             curPlayer.RemoveCard(card.Id);
-            state.CardDeck.Discard(card);
+            state.CardDeck.Discard(card, state.GameView);
             curPlayer = curPlayer.Id == state.CurrentPlayerId ? target : state.CurrentPlayer;
         }
 
-        curPlayer.ApplyDamage(1,
-            new GameState(state.Players, state.CardDeck, curPlayer.Id, state.Get));
+        state.GameView.ShowCardResult(curPlayer.Id, Name, true);
+        await curPlayer.ApplyDamage(1,
+            new GameState(state.Players, state.CardDeck, curPlayer.Id, state.GameView));
         return CardRc.Ok;
     }
 }
@@ -194,10 +207,11 @@ public sealed class Gatling : InstantCard
         Name = CardName.Gatling;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
         foreach (var player in state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId))
-            Shoot(state, player.Id);
+            await Shoot(state, player.Id);
 
         return CardRc.Ok;
     }
@@ -210,9 +224,9 @@ public sealed class CatBalou : InstantCard
         Name = CardName.CatBalou;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
-        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+        var playerId = await state.GameView.GetPlayerIdAsync(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
         var target = state.Players.Find(p => p.Id == playerId);
         if (target is null)
@@ -223,9 +237,10 @@ public sealed class CatBalou : InstantCard
         cards.AddRange(target.CardsInHand);
         cards.AddRange(target.CardsOnBoard);
         cards.Add(target.Weapon);
-        var cardId = state.Get.GetCardId(cards, target.CardsInHand.Count);
+        var cardId = await state.GameView.GetCardIdAsync(cards, target.CardsInHand.Count);
         var card = target.RemoveCard(cardId);
-        state.CardDeck.Discard(card);
+        state.CardDeck.Discard(card, state.GameView);
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name, target.Id, card);
         return CardRc.Ok;
     }
 }
@@ -239,12 +254,13 @@ public sealed class Saloon : InstantCard
         Name = CardName.Saloon;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override Task<CardRc> Play(GameState state)
     {
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
         foreach (var player in state.LivePlayers)
             player.Heal(player == state.CurrentPlayer ? PlayerHealAmount + 1 : PlayerHealAmount);
 
-        return CardRc.Ok;
+        return Task.FromResult(CardRc.Ok);
     }
 }
 
@@ -257,14 +273,15 @@ public sealed class Stagecoach : InstantCard
         Name = CardName.Stagecoach;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override Task<CardRc> Play(GameState state)
     {
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
         for (var i = 0; i < CardDrawCount; i++)
         {
-            var card = state.CardDeck.Draw();
-            state.CurrentPlayer.AddCardInHand(card);
+            var card = state.CardDeck.Draw(state.GameView);
+            state.CurrentPlayer.AddCardInHand(card, state.GameView);
         }
-        return CardRc.Ok;
+        return Task.FromResult(CardRc.Ok);
     }
 }
 
@@ -277,13 +294,14 @@ public sealed class WellsFargo : InstantCard
         Name = CardName.WellsFargo;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override Task<CardRc> Play(GameState state)
     {
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
         for (var i = 0; i < CardDrawCount; i++)
         {
-            var card = state.CardDeck.Draw();
-            state.CurrentPlayer.AddCardInHand(card);
+            var card = state.CardDeck.Draw(state.GameView);
+            state.CurrentPlayer.AddCardInHand(card, state.GameView);
         }
-        return CardRc.Ok;
+        return Task.FromResult(CardRc.Ok);
     }
 }

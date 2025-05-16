@@ -2,19 +2,20 @@
 
 public abstract class WeaponCard : Card
 {
-    public int Range { get; protected init; }
+    public int Range { get; protected set; }
     
     protected WeaponCard(CardSuit suit, CardRank rank) : base(suit, rank)
     {
         Type = CardType.Weapon;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override Task<CardRc> Play(GameState state)
     {
-        var weapon = state.CurrentPlayer.ChangeWeapon(this);
-        if (weapon != null)
-            state.CardDeck.Discard(weapon);
-        return CardRc.Ok;
+        var weapon = state.CurrentPlayer.ChangeWeapon(this, state.GameView);
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name, weapon is null);
+        if (weapon is not null)
+            state.CardDeck.Discard(weapon, state.GameView);
+        return Task.FromResult(CardRc.Ok);
     }
 }
 

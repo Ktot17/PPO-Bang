@@ -10,12 +10,13 @@ public abstract class EquipmentCard : Card
 
 public abstract class NotJail(CardSuit suit, CardRank rank) : EquipmentCard(suit, rank)
 {
-    internal override CardRc Play(GameState state)
+    internal override Task<CardRc> Play(GameState state)
     {
         if (state.CurrentPlayer.CardsOnBoard.Any(c => c.Name == Name))
-            return CardRc.CantPlay;
-        state.CurrentPlayer.AddCardOnBoard(this);
-        return CardRc.Ok;
+            return Task.FromResult(CardRc.CantPlay);
+        state.CurrentPlayer.AddCardOnBoard(this, state.GameView);
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name);
+        return Task.FromResult(CardRc.Ok);
     }
 }
 
@@ -28,13 +29,14 @@ public sealed class Barrel : NotJail
     
     internal bool ApplyEffect(GameState state, Guid playerId)
     {
-        var card = state.CardDeck.Draw();
-        state.CardDeck.Discard(card);
+        var card = state.CardDeck.Draw(state.GameView);
+        state.CardDeck.Discard(card, state.GameView);
         var player = state.Players.First(p => p.Id == playerId);
         var barrel = player.CardsOnBoard.First(c => c.Name == Name);
+        state.GameView.ShowCardResult(playerId, Name, card.Suit is CardSuit.Hearts, card);
         if (card.Suit is not CardSuit.Hearts)
             return false;
-        state.CardDeck.Discard(player.RemoveCard(barrel.Id));
+        state.CardDeck.Discard(player.RemoveCard(barrel.Id), state.GameView);
         return true;
     }
 }
@@ -64,19 +66,24 @@ public sealed class Dynamite : NotJail
         Name = CardName.Dynamite;
     }
 
-    internal void ApplyEffect(GameState state)
+    internal async Task ApplyEffect(GameState state)
     {
-        var card = state.CardDeck.Draw();
-        state.CardDeck.Discard(card);
+        var card = state.CardDeck.Draw(state.GameView);
+        state.CardDeck.Discard(card, state.GameView);
         var player = state.CurrentPlayer;
         var dynamite = player.CardsOnBoard.First(c => c.Name == Name);
         player.RemoveCard(dynamite.Id);
         if (card.Suit is not CardSuit.Spades || card.Rank is < CardRank.Two or > CardRank.Nine)
-            state.GetNextPlayer().AddCardOnBoard(dynamite);
+        {
+            var next = state.GetNextPlayer();
+            state.GameView.ShowCardResult(next.Id, Name, false, card);
+            next.AddCardOnBoard(dynamite, state.GameView);
+        }
         else
         {
-            player.ApplyDamage(DynamiteDamage, state);
-            state.CardDeck.Discard(dynamite);
+            state.GameView.ShowCardResult(player.Id, Name, true, card);
+            await player.ApplyDamage(DynamiteDamage, state);
+            state.CardDeck.Discard(dynamite, state.GameView);
         }
     }
 }
@@ -92,17 +99,22 @@ public sealed class BeerBarrel : NotJail
     
     internal void ApplyEffect(GameState state)
     {
-        var card = state.CardDeck.Draw();
-        state.CardDeck.Discard(card);
+        var card = state.CardDeck.Draw(state.GameView);
+        state.CardDeck.Discard(card, state.GameView);
         var player = state.CurrentPlayer;
         var beerBarrel = player.CardsOnBoard.First(c => c.Name == Name);
         player.RemoveCard(beerBarrel.Id);
         if (card.Suit is not CardSuit.Clubs || card.Rank is < CardRank.Two or > CardRank.Nine)
-            state.GetNextPlayer().AddCardOnBoard(beerBarrel);
+        {
+            var next = state.GetNextPlayer();
+            state.GameView.ShowCardResult(next.Id, Name, false, card);
+            next.AddCardOnBoard(beerBarrel, state.GameView);
+        }
         else
         {
+            state.GameView.ShowCardResult(player.Id, Name, true, card);
             player.Heal(BeerBarrelHeal);
-            state.CardDeck.Discard(beerBarrel);
+            state.CardDeck.Discard(beerBarrel, state.GameView);
         }
     }
 }
@@ -114,9 +126,9 @@ public sealed class Jail : EquipmentCard
         Name = CardName.Jail;
     }
 
-    internal override CardRc Play(GameState state)
+    internal override async Task<CardRc> Play(GameState state)
     {
-        var playerId = state.Get.GetPlayerId(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
+        var playerId = await state.GameView.GetPlayerIdAsync(state.LivePlayers.Where(p => p.Id != state.CurrentPlayerId).ToList(),
             state.CurrentPlayerId);
         var target = state.Players.Find(p => p.Id == playerId);
         if (target is null)
@@ -124,18 +136,20 @@ public sealed class Jail : EquipmentCard
         if (target.CardsOnBoard.Any(c => c.Name == Name) ||
             target.Role is PlayerRole.Sheriff)
             return CardRc.CantPlay;
-        target.AddCardOnBoard(this);
+        state.GameView.ShowCardResult(state.CurrentPlayerId, Name, playerId);
+        target.AddCardOnBoard(this, state.GameView);
         return CardRc.Ok;
     }
     
     internal bool ApplyEffect(GameState state)
     {
-        var card = state.CardDeck.Draw();
-        state.CardDeck.Discard(card);
+        var card = state.CardDeck.Draw(state.GameView);
+        state.CardDeck.Discard(card, state.GameView);
         var player = state.CurrentPlayer;
         var jail = player.CardsOnBoard.First(c => c.Name == Name);
         player.RemoveCard(jail.Id);
-        state.CardDeck.Discard(jail);
+        state.CardDeck.Discard(jail, state.GameView);
+        state.GameView.ShowCardResult(player.Id, Name, card.Suit is not CardSuit.Hearts, card);
         return card.Suit is not CardSuit.Hearts;
     }
 }

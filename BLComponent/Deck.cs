@@ -8,7 +8,7 @@ public sealed class Deck
     private readonly List<Card> _discardPile = [];
     private readonly Random _random = new();
     
-    internal Card? TopDiscardedCard => _discardPile.Count == 0 ? null : _discardPile[^1];
+    internal Card? TopDiscardedCard => _discardPile.Count == 0 ? null : _discardPile[_discardPile.Count - 1];
 
     internal Deck(ICardRepository cardRepository)
     {
@@ -18,19 +18,23 @@ public sealed class Deck
             _drawPile.Push(card);
     }
 
-    internal Card Draw()
+    internal Card Draw(IGameView gameView)
     {
         if (_drawPile.Count != 0)
             return _drawPile.Pop();
         Shuffle(_discardPile);
         foreach (var card in _discardPile)
+        {
+            gameView.CardReturnedToDeck(card.Id);
             _drawPile.Push(card);
+        }
         _discardPile.Clear();
         return _drawPile.Pop();
     }
 
-    internal void Discard(Card card)
+    internal void Discard(Card card, IGameView gameView)
     {
+        gameView.CardDiscarded(card.Id);
         _discardPile.Add(card);
     }
 
@@ -44,11 +48,8 @@ public sealed class Deck
             (cards[k], cards[n]) = (cards[n], cards[k]);
         }
     }
-    
-    internal IReadOnlyList<Card> DrawPile()
-    {
-        return _drawPile.ToList();
-    }
+
+    internal IReadOnlyList<Card> DrawPile => [.._drawPile];
 
     internal void ForUnitTestWithDynamiteAndBeerBarrel()
     {

@@ -4,22 +4,54 @@ using BLComponent.OutputPort;
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("BLUnitTests")]
 namespace BLComponent;
 
-public interface IGet
+public interface IGameView
 {
-    public Guid GetPlayerId(IReadOnlyList<Player> players, Guid currentPlayerId);
-    public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount) => GetCardId(cards, unknownCardsCount, null);
-    public Guid GetCardId(IReadOnlyList<Card?> cards, int unknownCardsCount, Guid? playerId);
-    public void GeneralStoreError();
+    public Task<Guid> GetPlayerIdAsync(IReadOnlyList<Player> players, Guid currentPlayerId);
+#if NET8_0
+    public Task<Guid> GetCardIdAsync(IReadOnlyList<Card?> cards, int unknownCardsCount) => 
+        GetCardIdAsync(cards, unknownCardsCount, null);
+#else
+    public Task<Guid> GetCardIdAsync(IReadOnlyList<Card?> cards, int unknownCardsCount);
+#endif
+    public Task<Guid> GetCardIdAsync(IReadOnlyList<Card?> cards, int unknownCardsCount, Guid? playerId);
+    public Task<bool> YesOrNoAsync(Guid playerId, CardName name);
+#if NET8_0
+    public void ShowCardResult(Guid curPlayerId, CardName name, bool? didWork, Guid? targetId, Card? card);
+    public void ShowCardResult(Guid curPlayerId, CardName name) => 
+        ShowCardResult(curPlayerId, name, null, null, null);
+    public void ShowCardResult(Guid curPlayerId, CardName name, Guid targetId) => 
+        ShowCardResult(curPlayerId, name, null, targetId, null);
+    public void ShowCardResult(Guid curPlayerId, CardName name, bool didWork) => 
+        ShowCardResult(curPlayerId, name, didWork, null, null);
+    public void ShowCardResult(Guid curPlayerId, CardName name, bool didWork, Guid target) => 
+        ShowCardResult(curPlayerId, name, didWork, target, null);
+    public void ShowCardResult(Guid curPlayerId, CardName name, bool didWork, Card card) => 
+        ShowCardResult(curPlayerId, name, didWork, null, card);
+    public void ShowCardResult(Guid curPlayerId, CardName name, Guid targetId, Card card) => 
+        ShowCardResult(curPlayerId, name, null, targetId, card);
+#else
+    public void ShowCardResult(Guid curPlayerId, CardName name);
+    public void ShowCardResult(Guid curPlayerId, CardName name, Guid targetId);
+    public void ShowCardResult(Guid curPlayerId, CardName name, bool didWork);
+    public void ShowCardResult(Guid curPlayerId, CardName name, bool didWork, Guid target);
+    public void ShowCardResult(Guid curPlayerId, CardName name, bool didWork, Card card);
+    public void ShowCardResult(Guid curPlayerId, CardName name, Guid targetId, Card card);
+#endif
+    public void CardAddedInHand(Guid cardId, Guid playerId);
+    public void CardAddedOnBoard(Guid cardId, Guid playerId);
+    public void WeaponAdded(Guid cardId, Guid playerId);
+    public void CardDiscarded(Guid cardId);
+    public void CardReturnedToDeck(Guid cardId);
 }
 
-internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentPlayerId, IGet get)
+internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentPlayerId, IGameView gameView)
 {
     private int _currentPlayerIndex;
     internal List<Player> Players { get; } = [.. players];
     internal Deck CardDeck { get; } = deck;
     internal Guid CurrentPlayerId { get; private set; } = currentPlayerId;
     internal Player CurrentPlayer => Players.First(p => p.Id == CurrentPlayerId);
-    internal IGet Get { get; } = get;
+    internal IGameView GameView { get; } = gameView;
     internal IReadOnlyList<Player> LivePlayers => [.. Players.Where(p => !p.IsDead)];
     internal IReadOnlyList<Player> DeadPlayers => [.. Players.Where(p => p.IsDead)];
 
@@ -29,7 +61,11 @@ internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentP
         var targetIndex = LivePlayers.ToList().FindIndex(p => p.Id == targetId);
         var add = LivePlayers[targetIndex].CardsOnBoard.Any(c => c.Name == CardName.Mustang) ? 1 : 0;
         var sub = LivePlayers[playerIndex].CardsOnBoard.Any(c => c.Name == CardName.Scope) ? 1 : 0;
+#if NET8
         return int.Min(LivePlayers.Count - int.Abs(playerIndex - targetIndex), int.Abs(playerIndex - targetIndex)) + add - sub;
+#else
+        return Math.Min(LivePlayers.Count - Math.Abs(playerIndex - targetIndex), Math.Abs(playerIndex - targetIndex)) + add - sub;
+#endif
     }
 
     internal Player GetNextPlayer()
@@ -52,8 +88,10 @@ internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentP
     }
 }
 
-public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGameManager
+public sealed class GameManager(ICardRepository cardRepository, IGameView gameView) : IGameManager
 {
+    private const int MinPlayersCountConst = 4;
+    private const int MaxPlayersCountConst = 7;
     private const int OutlawRewardCardCount = 3;
     
     private GameState _gameState = null!;
@@ -63,17 +101,19 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
             PlayerRole.Outlaw, PlayerRole.DeputySheriff,
             PlayerRole.Outlaw, PlayerRole.DeputySheriff];
 
+    public static int MinPlayersCount => MinPlayersCountConst;
+    public static int MaxPlayersCount => MaxPlayersCountConst;
     public IReadOnlyList<Player> Players => _gameState.Players;
     public Player CurPlayer => _gameState.CurrentPlayer;
     public Card? TopDiscardedCard => _gameState.CardDeck.TopDiscardedCard;
     public IReadOnlyList<Player> LivePlayers => _gameState.LivePlayers;
     public IReadOnlyList<Player> DeadPlayers => _gameState.DeadPlayers;
+    public IReadOnlyList<Card> CardsInDeck => _gameState.CardDeck.DrawPile;
 
     public void GameInit(IEnumerable<Guid> playerIds)
     {
         List<Guid> enumerable = [.. playerIds];
-        if (enumerable.Count < IGameManager.MinPlayersCount ||
-            enumerable.Count > IGameManager.MaxPlayersCount)
+        if (enumerable.Count is < MinPlayersCountConst or > MaxPlayersCountConst)
             throw new WrongNumberOfPlayersException(enumerable.Count);
         if (enumerable.Distinct().Count() != enumerable.Count)
             throw new NotUniqueIdsException();
@@ -92,13 +132,16 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
             _roles.RemoveAt(k);
         }
         
-        _gameState = new GameState(players, new Deck(cardRepository), players[0].Id, get);
+        _gameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
+    }
 
+    public void GameStart()
+    {
         foreach (var player in _gameState.Players)
             for (var i = 0; i < player.MaxHealth; ++i)
-                player.AddCardInHand(_gameState.CardDeck.Draw());
-        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
-        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
+                player.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
+        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
+        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
     }
 
     private void PlayerClear(Guid playerId)
@@ -107,31 +150,34 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
         var cardsInHandCount = player.CardsInHand.Count;
         var cardsOnBoardCount = player.CardsOnBoard.Count;
         for (var i = 0; i < cardsInHandCount; ++i)
-            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsInHand[0].Id));
+            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsInHand[0].Id), _gameState.GameView);
         for (var i = 0; i < cardsOnBoardCount; ++i)
-            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsOnBoard[0].Id));
-        if (player.Weapon != null)
-            _gameState.CardDeck.Discard(player.RemoveCard(player.Weapon.Id));
+            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsOnBoard[0].Id), _gameState.GameView);
+        if (player.Weapon is not null)
+            _gameState.CardDeck.Discard(player.RemoveCard(player.Weapon.Id), _gameState.GameView);
     }
 
-    public CardRc PlayCard(Guid cardId)
+    public async Task<CardRc> PlayCard(Guid cardId)
     {
         var curCard = CurPlayer.CardsInHand.FirstOrDefault(c => c.Id == cardId);
         if (curCard is null)
             throw new NotExistingGuidException();
         var isIndians = curCard.Name is CardName.Indians;
-        var rc = curCard.Play(_gameState);
+        var rc = await curCard.Play(_gameState);
         if (rc is not CardRc.Ok)
             return rc;
-        DiscardCard(curCard.Id);
+        if (curCard.Type is CardType.Instant)
+            DiscardCard(curCard.Id);
+        else
+            CurPlayer.RemoveCard(curCard.Id);
         if (isIndians)
             return CheckEndGame();
-        foreach (var player in DeadPlayers.Where(p => p.IsDeadOnThisTurn))
-            switch (player.Role)
+        foreach (var playerRole in DeadPlayers.Where(p => p.IsDeadOnThisTurn).Select(p => p.Role))
+            switch (playerRole)
             {
                 case PlayerRole.Outlaw:
                     for (var i = 0; i < OutlawRewardCardCount; ++i)
-                        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
+                        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
                     break;
                 case PlayerRole.DeputySheriff when CurPlayer.Role is PlayerRole.Sheriff:
                     PlayerClear(CurPlayer.Id);
@@ -145,9 +191,9 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
         return CheckEndGame();
     }
 
-    public void DiscardCard(Guid cardId) => _gameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId));
+    public void DiscardCard(Guid cardId) => _gameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), _gameState.GameView);
 
-    public CardRc EndTurn()
+    public async Task<CardRc> EndTurn()
     {
         var isFirstIteration = true;
         while (true)
@@ -159,7 +205,7 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
             _gameState.NextPlayer();
             Card? card;
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Dynamite)) is not null)
-                ((Dynamite)card).ApplyEffect(_gameState);
+                await ((Dynamite)card).ApplyEffect(_gameState);
 
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.BeerBarrel)) is not null)
                 ((BeerBarrel)card).ApplyEffect(_gameState);
@@ -174,8 +220,8 @@ public sealed class GameManager(ICardRepository cardRepository, IGet get) : IGam
                 ((Jail)card).ApplyEffect(_gameState))
                 continue;
 
-            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
-            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw());
+            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
+            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
             return CardRc.Ok;
         }
     }
