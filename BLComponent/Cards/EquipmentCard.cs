@@ -32,11 +32,10 @@ public sealed class Barrel : NotJail
         var card = state.CardDeck.Draw(state.GameView);
         state.CardDeck.Discard(card, state.GameView);
         var player = state.Players.First(p => p.Id == playerId);
-        var barrel = player.CardsOnBoard.First(c => c.Name == Name);
         state.GameView.ShowCardResult(playerId, Name, card.Suit is CardSuit.Hearts, card);
         if (card.Suit is not CardSuit.Hearts)
             return false;
-        state.CardDeck.Discard(player.RemoveCard(barrel.Id), state.GameView);
+        state.CardDeck.Discard(player.RemoveCard(Id), state.GameView);
         return true;
     }
 }
@@ -71,19 +70,18 @@ public sealed class Dynamite : NotJail
         var card = state.CardDeck.Draw(state.GameView);
         state.CardDeck.Discard(card, state.GameView);
         var player = state.CurrentPlayer;
-        var dynamite = player.CardsOnBoard.First(c => c.Name == Name);
-        player.RemoveCard(dynamite.Id);
+        player.RemoveCard(Id);
         if (card.Suit is not CardSuit.Spades || card.Rank is < CardRank.Two or > CardRank.Nine)
         {
             var next = state.GetNextPlayer();
             state.GameView.ShowCardResult(next.Id, Name, false, card);
-            next.AddCardOnBoard(dynamite, state.GameView);
+            next.AddCardOnBoard(this, state.GameView);
         }
         else
         {
             state.GameView.ShowCardResult(player.Id, Name, true, card);
             await player.ApplyDamage(DynamiteDamage, state);
-            state.CardDeck.Discard(dynamite, state.GameView);
+            state.CardDeck.Discard(this, state.GameView);
         }
     }
 }
@@ -102,19 +100,18 @@ public sealed class BeerBarrel : NotJail
         var card = state.CardDeck.Draw(state.GameView);
         state.CardDeck.Discard(card, state.GameView);
         var player = state.CurrentPlayer;
-        var beerBarrel = player.CardsOnBoard.First(c => c.Name == Name);
-        player.RemoveCard(beerBarrel.Id);
+        player.RemoveCard(Id);
         if (card.Suit is not CardSuit.Clubs || card.Rank is < CardRank.Two or > CardRank.Nine)
         {
             var next = state.GetNextPlayer();
             state.GameView.ShowCardResult(next.Id, Name, false, card);
-            next.AddCardOnBoard(beerBarrel, state.GameView);
+            next.AddCardOnBoard(this, state.GameView);
         }
         else
         {
             state.GameView.ShowCardResult(player.Id, Name, true, card);
             player.Heal(BeerBarrelHeal);
-            state.CardDeck.Discard(beerBarrel, state.GameView);
+            state.CardDeck.Discard(this, state.GameView);
         }
     }
 }
@@ -146,9 +143,8 @@ public sealed class Jail : EquipmentCard
         var card = state.CardDeck.Draw(state.GameView);
         state.CardDeck.Discard(card, state.GameView);
         var player = state.CurrentPlayer;
-        var jail = player.CardsOnBoard.First(c => c.Name == Name);
-        player.RemoveCard(jail.Id);
-        state.CardDeck.Discard(jail, state.GameView);
+        player.RemoveCard(Id);
+        state.CardDeck.Discard(this, state.GameView);
         state.GameView.ShowCardResult(player.Id, Name, card.Suit is not CardSuit.Hearts, card);
         return card.Suit is not CardSuit.Hearts;
     }

@@ -44,12 +44,12 @@ public interface IGameView
     public void CardReturnedToDeck(Guid cardId);
 }
 
-internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentPlayerId, IGameView gameView)
+internal class GameState(IReadOnlyList<Player> players, Deck deck, IGameView gameView)
 {
     private int _currentPlayerIndex;
     internal List<Player> Players { get; } = [.. players];
     internal Deck CardDeck { get; } = deck;
-    internal Guid CurrentPlayerId { get; private set; } = currentPlayerId;
+    internal Guid CurrentPlayerId { get; private set; } = players[0].Id;
     internal Player CurrentPlayer => Players.First(p => p.Id == CurrentPlayerId);
     internal IGameView GameView { get; } = gameView;
     internal IReadOnlyList<Player> LivePlayers => [.. Players.Where(p => !p.IsDead)];
@@ -61,7 +61,7 @@ internal class GameState(IReadOnlyList<Player> players, Deck deck, Guid currentP
         var targetIndex = LivePlayers.ToList().FindIndex(p => p.Id == targetId);
         var add = LivePlayers[targetIndex].CardsOnBoard.Any(c => c.Name == CardName.Mustang) ? 1 : 0;
         var sub = LivePlayers[playerIndex].CardsOnBoard.Any(c => c.Name == CardName.Scope) ? 1 : 0;
-#if NET8
+#if NET8_0
         return int.Min(LivePlayers.Count - int.Abs(playerIndex - targetIndex), int.Abs(playerIndex - targetIndex)) + add - sub;
 #else
         return Math.Min(LivePlayers.Count - Math.Abs(playerIndex - targetIndex), Math.Abs(playerIndex - targetIndex)) + add - sub;
@@ -132,7 +132,7 @@ public sealed class GameManager(ICardRepository cardRepository, IGameView gameVi
             _roles.RemoveAt(k);
         }
         
-        _gameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
+        _gameState = new GameState(players, new Deck(cardRepository), gameView);
     }
 
     public void GameStart()
