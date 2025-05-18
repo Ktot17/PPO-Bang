@@ -1,10 +1,37 @@
-﻿namespace BLComponent;
+﻿using Newtonsoft.Json;
+
+namespace BLComponent;
+
+public record CardDto
+{
+    public CardDto() {}
+
+    internal CardDto(Card card)
+    {
+        Id = card.Id;
+        Suit = card.Suit;
+        Rank = card.Rank;
+        Name = card.Name;
+        Type = card.Type;
+    }
+    
+    [JsonProperty]
+    public Guid Id { get; private set; }
+    [JsonProperty]
+    public CardSuit Suit { get; private set; }
+    [JsonProperty]
+    public CardRank Rank { get; private set; }
+    [JsonProperty]
+    public CardName Name { get; private set; }
+    [JsonProperty]
+    public CardType Type { get; private set; }
+}
 
 public abstract class Card(CardSuit suit, CardRank rank)
 {
-    public Guid Id { get; } = Guid.NewGuid();
-    public CardSuit Suit { get; } = suit;
-    public CardRank Rank { get; } = rank;
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public CardSuit Suit { get; private set; } = suit;
+    public CardRank Rank { get; private set; } = rank;
     public CardName Name { get; protected set; }
     public CardType Type { get; protected set; }
 

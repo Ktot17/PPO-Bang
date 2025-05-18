@@ -14,9 +14,9 @@ public class CardsTests
     {
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[1].Id));
@@ -33,9 +33,9 @@ public class CardsTests
     {
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[1].Id));
@@ -56,10 +56,10 @@ public class CardsTests
     {
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[2].Id));
@@ -81,10 +81,10 @@ public class CardsTests
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Diamonds, CardRank.Ace);
         var barrel = (Barrel)CardFactory.CreateCard(CardName.Barrel, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Hearts, CardRank.Ace)
@@ -105,10 +105,10 @@ public class CardsTests
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Diamonds, CardRank.Ace);
         var barrel = (Barrel)CardFactory.CreateCard(CardName.Barrel, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace)
@@ -129,10 +129,10 @@ public class CardsTests
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Diamonds, CardRank.Ace);
         var missed = (Missed)CardFactory.CreateCard(CardName.Missed, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace)
@@ -154,10 +154,10 @@ public class CardsTests
     {
         var beer = (Beer)CardFactory.CreateCard(CardName.Beer, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var rc = await beer.Play(new GameState(players, null!, players[0].Id, _gameViewMock.Object));
         Assert.Equal(CardRc.CantPlay, rc);
@@ -169,8 +169,8 @@ public class CardsTests
     {
         var beer = (Beer)CardFactory.CreateCard(CardName.Beer, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         await players[0].ApplyDamage(1, new GameState(players, null!, players[0].Id, _gameViewMock.Object));
         var rc = await beer.Play(new GameState(players, null!, players[0].Id, _gameViewMock.Object));
@@ -183,10 +183,10 @@ public class CardsTests
     {
         var beer = (Beer)CardFactory.CreateCard(CardName.Beer, CardSuit.Diamonds, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         await players[0].ApplyDamage(1, new GameState(players, null!, players[0].Id, _gameViewMock.Object));
         var rc = await beer.Play(new GameState(players, null!, players[0].Id, _gameViewMock.Object));
@@ -199,10 +199,10 @@ public class CardsTests
     {
         var panic = (Panic)CardFactory.CreateCard(CardName.Panic, CardSuit.Spades, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[2].Id));
@@ -215,10 +215,10 @@ public class CardsTests
     {
         var panic = (Panic)CardFactory.CreateCard(CardName.Panic, CardSuit.Spades, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[1].Id));
@@ -231,10 +231,10 @@ public class CardsTests
     {
         var panic = (Panic)CardFactory.CreateCard(CardName.Panic, CardSuit.Spades, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[1].Id));
@@ -256,10 +256,10 @@ public class CardsTests
     {
         var generalStore = (GeneralStore)CardFactory.CreateCard(CardName.GeneralStore, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
@@ -289,10 +289,10 @@ public class CardsTests
     {
         var generalStore = (GeneralStore)CardFactory.CreateCard(CardName.GeneralStore, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Ace),
@@ -321,10 +321,10 @@ public class CardsTests
     {
         var indians = (Indians)CardFactory.CreateCard(CardName.Indians, CardSuit.Spades, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         await players[1].ApplyDamage(3, null!);
         var rc = await indians.Play(new GameState(players, null!, players[0].Id, _gameViewMock.Object));
@@ -340,10 +340,10 @@ public class CardsTests
     {
         var indians = (Indians)CardFactory.CreateCard(CardName.Indians, CardSuit.Spades, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
         _gameViewMock.Setup(get => get.YesOrNoAsync(It.IsAny<Guid>(), It.IsAny<CardName>())).
@@ -364,10 +364,10 @@ public class CardsTests
     {
         var duel = (Duel)CardFactory.CreateCard(CardName.Duel, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
@@ -393,10 +393,10 @@ public class CardsTests
     {
         var duel = (Duel)CardFactory.CreateCard(CardName.Duel, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
@@ -423,10 +423,10 @@ public class CardsTests
     {
         var gatling = (Gatling)CardFactory.CreateCard(CardName.Gatling, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         await players[1].ApplyDamage(3, null!);
         await players[3].ApplyDamage(3, null!);
@@ -443,10 +443,10 @@ public class CardsTests
     {
         var gatling = (Gatling)CardFactory.CreateCard(CardName.Gatling, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var rc = await gatling.Play(new GameState(players, null!, players[0].Id, _gameViewMock.Object));
         Assert.Equal(CardRc.Ok, rc);
@@ -461,10 +461,10 @@ public class CardsTests
     {
         var catBalou = (CatBalou)CardFactory.CreateCard(CardName.CatBalou, CardSuit.Spades, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[1].Id));
@@ -477,10 +477,10 @@ public class CardsTests
     {
         var catBalou = (CatBalou)CardFactory.CreateCard(CardName.CatBalou, CardSuit.Spades, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
         var deck = new Deck(_cardRepoMock.Object);
@@ -504,10 +504,10 @@ public class CardsTests
     {
         var saloon = (Saloon)CardFactory.CreateCard(CardName.Saloon, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         await players[0].ApplyDamage(3, null!);
         await players[1].ApplyDamage(2, null!);
@@ -526,10 +526,10 @@ public class CardsTests
     {
         var stagecoach = (Stagecoach)CardFactory.CreateCard(CardName.Stagecoach, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace),
@@ -546,10 +546,10 @@ public class CardsTests
     {
         var wellsFargo = (WellsFargo)CardFactory.CreateCard(CardName.WellsFargo, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace),
@@ -568,10 +568,10 @@ public class CardsTests
         var scope = (Scope)CardFactory.CreateCard(CardName.Scope, CardSuit.Clubs, CardRank.Ace);
         var mustang = (Mustang)CardFactory.CreateCard(CardName.Mustang, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var rc = await scope.Play(new GameState(players, null!, players[0].Id, _gameViewMock.Object));
         Assert.Equal(CardRc.Ok, rc);
@@ -593,10 +593,10 @@ public class CardsTests
     {
         var dynamite = (Dynamite)CardFactory.CreateCard(CardName.Dynamite, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Six),
@@ -605,7 +605,7 @@ public class CardsTests
         var gameState = new GameState(players, deck, players[0].Id, _gameViewMock.Object);
         var rc = await dynamite.Play(gameState);
         Assert.Equal(CardRc.Ok, rc);
-        dynamite.ApplyEffect(gameState);
+        await dynamite.ApplyEffect(gameState);
         Assert.Equal(2, players[0].Health);
         Assert.Equal(dynamite.Id, deck.TopDiscardedCard!.Id);
     }
@@ -615,10 +615,10 @@ public class CardsTests
     {
         var dynamite = (Dynamite)CardFactory.CreateCard(CardName.Dynamite, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Six),
@@ -627,7 +627,7 @@ public class CardsTests
         var gameState = new GameState(players, deck, players[0].Id, _gameViewMock.Object);
         var rc = await dynamite.Play(gameState);
         Assert.Equal(CardRc.Ok, rc);
-        dynamite.ApplyEffect(gameState);
+        await dynamite.ApplyEffect(gameState);
         Assert.Equal(players[0].MaxHealth, players[0].Health);
         Assert.Equal(dynamite.Id, players[1].CardsOnBoard[0].Id);
     }
@@ -637,10 +637,10 @@ public class CardsTests
     {
         var beerBarrel = (BeerBarrel)CardFactory.CreateCard(CardName.BeerBarrel, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Six),
@@ -660,10 +660,10 @@ public class CardsTests
     {
         var beerBarrel = (BeerBarrel)CardFactory.CreateCard(CardName.BeerBarrel, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Six),
@@ -683,10 +683,10 @@ public class CardsTests
     {
         var jail = (Jail)CardFactory.CreateCard(CardName.Jail, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Take(1).Concat(players.Skip(2)).ToList(),
             players[1].Id)).Returns(Task.FromResult(players[0].Id));
@@ -699,10 +699,10 @@ public class CardsTests
     {
         var jail = (Jail)CardFactory.CreateCard(CardName.Jail, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _gameViewMock.Setup(get => get.GetPlayerIdAsync(players.Skip(1).ToList(), players[0].Id)).
             Returns(Task.FromResult(players[1].Id));
@@ -717,10 +717,10 @@ public class CardsTests
     {
         var jail = (Jail)CardFactory.CreateCard(CardName.Jail, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         _cardRepoMock.Setup(repo => repo.GetAll).Returns([
             CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Six),
@@ -743,10 +743,10 @@ public class CardsTests
         var carabine = (Carabine)CardFactory.CreateCard(CardName.Carabine, CardSuit.Clubs, CardRank.Ace);
         var winchester = (Winchester)CardFactory.CreateCard(CardName.Winchester, CardSuit.Clubs, CardRank.Ace);
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var rc = await schofield.Play(new GameState(players, null!, players[0].Id, _gameViewMock.Object));
         Assert.Equal(CardRc.Ok, rc);
@@ -772,10 +772,10 @@ public class CardsTests
     public async Task TargetCards_NotExistingGuidTest()
     {
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var bang = (Bang)CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace);
         var jail = (Jail)CardFactory.CreateCard(CardName.Jail, CardSuit.Clubs, CardRank.Ace);

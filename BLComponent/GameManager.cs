@@ -1,5 +1,6 @@
 ﻿using BLComponent.InputPorts;
 using BLComponent.OutputPort;
+using Newtonsoft.Json;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("BLUnitTests")]
 namespace BLComponent;
@@ -44,16 +45,54 @@ public interface IGameView
     public void CardReturnedToDeck(Guid cardId);
 }
 
-internal class GameState(IReadOnlyList<Player> players, Deck deck, IGameView gameView)
+public record GameStateDto
+{
+    public GameStateDto() {}
+    
+    internal GameStateDto(GameState state)
+    {
+        Players = state.Players.Select(p => new PlayerDto(p)).ToList();
+        CardDeck = new DeckDto(state.CardDeck);
+        CurrentPlayerId = state.CurrentPlayerId;
+    }
+
+    [JsonProperty]
+    public IReadOnlyList<PlayerDto> Players { get; private set; } = [];
+    [JsonProperty]
+    public DeckDto CardDeck { get; private set; } = new();
+    [JsonProperty]
+    public Guid CurrentPlayerId { get; private set; }
+}
+
+internal class GameState
 {
     private int _currentPlayerIndex;
-    internal List<Player> Players { get; } = [.. players];
-    internal Deck CardDeck { get; } = deck;
-    internal Guid CurrentPlayerId { get; private set; } = players[0].Id;
+    internal List<Player> Players { get; }
+    internal Deck CardDeck { get; }
+    internal Guid CurrentPlayerId { get; private set; }
     internal Player CurrentPlayer => Players.First(p => p.Id == CurrentPlayerId);
-    internal IGameView GameView { get; } = gameView;
+    internal IGameView GameView { get; }
     internal IReadOnlyList<Player> LivePlayers => [.. Players.Where(p => !p.IsDead)];
     internal IReadOnlyList<Player> DeadPlayers => [.. Players.Where(p => p.IsDead)];
+
+    internal GameState(IReadOnlyList<Player> players, Deck deck, Guid currentPlayerId, IGameView gameView)
+    {
+        _currentPlayerIndex = players.ToList().FindIndex(p => p.Id == currentPlayerId);
+        Players = [.. players];
+        CardDeck = deck;
+        CurrentPlayerId = currentPlayerId;
+        GameView = gameView;
+    }
+    
+    internal GameState(GameStateDto dto, IGameView gameView)
+    {
+        Players = [];
+        foreach (var playerDto in dto.Players)
+            Players.Add(new Player(playerDto));
+        CardDeck = new Deck(dto.CardDeck);
+        CurrentPlayerId = dto.CurrentPlayerId;
+        GameView = gameView;
+    }
 
     internal int GetRange(Guid playerId, Guid targetId)
     {
@@ -64,7 +103,8 @@ internal class GameState(IReadOnlyList<Player> players, Deck deck, IGameView gam
 #if NET8_0
         return int.Min(LivePlayers.Count - int.Abs(playerIndex - targetIndex), int.Abs(playerIndex - targetIndex)) + add - sub;
 #else
-        return Math.Min(LivePlayers.Count - Math.Abs(playerIndex - targetIndex), Math.Abs(playerIndex - targetIndex)) + add - sub;
+        return Math.Min(LivePlayers.Count - Math.Abs(playerIndex - targetIndex), 
+            Math.Abs(playerIndex - targetIndex)) + add - sub;
 #endif
     }
 
@@ -88,7 +128,7 @@ internal class GameState(IReadOnlyList<Player> players, Deck deck, IGameView gam
     }
 }
 
-public sealed class GameManager(ICardRepository cardRepository, IGameView gameView) : IGameManager
+public class GameManager(ICardRepository cardRepository, ISaveRepository saveRepository, IGameView gameView) : IGameManager
 {
     private const int MinPlayersCountConst = 4;
     private const int MaxPlayersCountConst = 7;
@@ -110,13 +150,13 @@ public sealed class GameManager(ICardRepository cardRepository, IGameView gameVi
     public IReadOnlyList<Player> DeadPlayers => _gameState.DeadPlayers;
     public IReadOnlyList<Card> CardsInDeck => _gameState.CardDeck.DrawPile;
 
-    public void GameInit(IEnumerable<Guid> playerIds)
+    public void GameInit(IEnumerable<string> playerNames)
     {
-        List<Guid> enumerable = [.. playerIds];
+        List<string> enumerable = [.. playerNames];
         if (enumerable.Count is < MinPlayersCountConst or > MaxPlayersCountConst)
             throw new WrongNumberOfPlayersException(enumerable.Count);
         if (enumerable.Distinct().Count() != enumerable.Count)
-            throw new NotUniqueIdsException();
+            throw new NotUniqueNamesException();
         var n = enumerable.Count;
         while (n > 1)
         {
@@ -124,15 +164,15 @@ public sealed class GameManager(ICardRepository cardRepository, IGameView gameVi
             var k = _random.Next(n + 1);
             (enumerable[n], enumerable[k]) = (enumerable[k], enumerable[n]);
         }
-        var players = new List<Player> { new(enumerable[0], PlayerRole.Sheriff, 5) };
+        var players = new List<Player> { new(Guid.NewGuid(), enumerable[0], PlayerRole.Sheriff, 5) };
         for (var i = 1; i < enumerable.Count; ++i)
         {
             var k = _random.Next(enumerable.Count - i);
-            players.Add(new Player(enumerable[i], _roles[k], 4));
+            players.Add(new Player(Guid.NewGuid(), enumerable[i], _roles[k], 4));
             _roles.RemoveAt(k);
         }
         
-        _gameState = new GameState(players, new Deck(cardRepository), gameView);
+        _gameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
     }
 
     public void GameStart()
@@ -247,5 +287,34 @@ public sealed class GameManager(ICardRepository cardRepository, IGameView gameVi
 
     public int GetRange(Guid playerId, Guid targetId) => _gameState.GetRange(playerId, targetId);
     
+    public void SaveState() => saveRepository.SaveState(new GameStateDto(_gameState));
+
+    public void LoadState(int stateId)
+    {
+        var gameState = saveRepository.FindState(stateId);
+        _gameState = new GameState(gameState, gameView);
+    }
+
+    public Dictionary<int, long> GetAllSaves => saveRepository.GetAll;
+
+    public IList<Card> GetAllCards
+    {
+        get
+        {
+            var cards = new List<Card>();
+            cards.AddRange(_gameState.CardDeck.DrawPile);
+            cards.AddRange(_gameState.CardDeck.DiscardPile);
+            foreach (var player in Players)
+            {
+                cards.AddRange(player.CardsInHand);
+                cards.AddRange(player.CardsOnBoard);
+                if (player.Weapon is not null)
+                    cards.Add(player.Weapon);
+            }
+
+            return cards;
+        }
+    }
+
     internal void ForUnitTestWithDynamiteAndBeerBarrel() => _gameState.CardDeck.ForUnitTestWithDynamiteAndBeerBarrel();
 }

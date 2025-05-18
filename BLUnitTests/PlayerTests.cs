@@ -13,7 +13,7 @@ public class PlayerTests
     [Fact]
     public void AddCard_Test()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         var card = CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace);
         player.AddCardInHand(card, GameViewMock.Object);
         Assert.Single(player.CardsInHand);
@@ -33,7 +33,7 @@ public class PlayerTests
     [Fact]
     public void RemoveCard_BadIdTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         Assert.Throws<NotExistingGuidException>(() => player.RemoveCard(Guid.NewGuid()));
         Assert.Throws<NotExistingGuidException>(() => player.RemoveCard(Guid.NewGuid()));
     }
@@ -41,7 +41,7 @@ public class PlayerTests
     [Fact]
     public void RemoveCard_FromHandTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         for (var i = 0; i < 5; i++)
             player.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace), GameViewMock.Object);
         for (var i = 0; i < 5; i++)
@@ -58,7 +58,7 @@ public class PlayerTests
     [Fact]
     public void RemoveCard_FromBoardTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         for (var i = 0; i < 5; i++)
             player.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace), GameViewMock.Object);
         for (var i = 0; i < 5; i++)
@@ -75,7 +75,7 @@ public class PlayerTests
     [Fact]
     public void RemoveCard_WeaponTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         for (var i = 0; i < 5; i++)
             player.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace), GameViewMock.Object);
         for (var i = 0; i < 5; i++)
@@ -92,7 +92,7 @@ public class PlayerTests
     [Fact]
     public  async Task ApplyDamage_UsualTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         var rc = await player.ApplyDamage(2, null!);
         Assert.True(rc);
         Assert.False(player.IsDead);
@@ -103,7 +103,7 @@ public class PlayerTests
     [Fact]
     public async Task ApplyDamage_DeathTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         var rc = await player.ApplyDamage(5, null!);
         Assert.False(rc);
         Assert.True(player.IsDead);
@@ -115,10 +115,10 @@ public class PlayerTests
     public async Task ApplyDamage_OneBeerDeathTest()
     {
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var cardRepoMock = new Mock<ICardRepository>();
         var gameViewMock = new Mock<IGameView>();
@@ -137,10 +137,10 @@ public class PlayerTests
     public async Task ApplyDamage_ManyBeerDeathTest()
     {
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var cardRepoMock = new Mock<ICardRepository>();
         var gameViewMock = new Mock<IGameView>();
@@ -161,8 +161,8 @@ public class PlayerTests
     public async Task ApplyDamage_TwoPlayersBeerDeathTest()
     {
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var cardRepoMock = new Mock<ICardRepository>();
         cardRepoMock.Setup(repo => repo.GetAll).Returns([]);
@@ -179,9 +179,9 @@ public class PlayerTests
     public async Task ApplyDamage_ThreePlayersBeerDeathTest()
     {
         var players = new List<Player>([
-            new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
-            new Player(Guid.NewGuid(), PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
+            new Player(Guid.NewGuid(), "", PlayerRole.Outlaw, 4),
         ]);
         var cardRepoMock = new Mock<ICardRepository>();
         var gameViewMock = new Mock<IGameView>();
@@ -199,7 +199,7 @@ public class PlayerTests
     [Fact]
     public void Heal_MaxHealthTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         var rc = player.Heal(100);
         Assert.True(rc);
         Assert.False(player.IsDead);
@@ -209,7 +209,7 @@ public class PlayerTests
     [Fact]
     public async Task Heal_UsualTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         await player.ApplyDamage(2, null!);
         var rc = player.Heal(1);
         Assert.False(rc);
@@ -220,7 +220,7 @@ public class PlayerTests
     [Fact]
     public async Task Heal_ReviveTest()
     {
-        var player = new Player(Guid.NewGuid(), PlayerRole.Sheriff, 5);
+        var player = new Player(Guid.NewGuid(), "", PlayerRole.Sheriff, 5);
         await player.ApplyDamage(6, null!);
         var rc = player.Heal(2);
         Assert.False(rc);

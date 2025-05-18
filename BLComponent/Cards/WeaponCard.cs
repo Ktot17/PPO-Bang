@@ -1,4 +1,19 @@
-﻿namespace BLComponent;
+﻿using Newtonsoft.Json;
+
+namespace BLComponent;
+
+public record WeaponCardDto : CardDto
+{
+    public WeaponCardDto() {}
+
+    internal WeaponCardDto(WeaponCard card) : base(card)
+    {
+        Range = card.Range;
+    }
+    
+    [JsonProperty]
+    public int Range { get; private set; }
+}
 
 public abstract class WeaponCard : Card
 {

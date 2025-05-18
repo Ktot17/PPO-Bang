@@ -1,6 +1,23 @@
 ﻿using BLComponent.InputPorts;
+using Newtonsoft.Json;
 
 namespace BLComponent;
+
+public record DeckDto
+{
+    public DeckDto() {}
+
+    internal DeckDto(Deck deck)
+    {
+        DrawPile = deck.DrawPile.Select(c => new CardDto(c)).ToList();
+        DiscardPile = deck.DiscardPile.Select(c => new CardDto(c)).ToList();
+    }
+    
+    [JsonProperty]
+    public IReadOnlyList<CardDto> DrawPile { get; private set; } = [];
+    [JsonProperty]
+    public IReadOnlyList<CardDto> DiscardPile { get; private set; } = [];
+}
 
 public sealed class Deck
 {
@@ -16,6 +33,14 @@ public sealed class Deck
         Shuffle(cards);
         foreach (var card in cards)
             _drawPile.Push(card);
+    }
+
+    internal Deck(DeckDto dto)
+    {
+        foreach (var cardDto in dto.DrawPile.Reverse())
+            _drawPile.Push(CardFactory.CreateCard(cardDto.Name, cardDto.Suit, cardDto.Rank));
+        foreach (var cardDto in dto.DiscardPile)
+            _discardPile.Add(CardFactory.CreateCard(cardDto.Name, cardDto.Suit, cardDto.Rank));
     }
 
     internal Card Draw(IGameView gameView)
@@ -50,6 +75,7 @@ public sealed class Deck
     }
 
     internal IReadOnlyList<Card> DrawPile => [.._drawPile];
+    internal IReadOnlyList<Card> DiscardPile => _discardPile;
 
     internal void ForUnitTestWithDynamiteAndBeerBarrel()
     {

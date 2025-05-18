@@ -1,11 +1,54 @@
-﻿namespace BLComponent;
+﻿using Newtonsoft.Json;
 
-public class Player(Guid id, PlayerRole role, int maxHealth)
+namespace BLComponent;
+
+public record PlayerDto
 {
-    public Guid Id { get; } = id;
-    public PlayerRole Role { get; } = role;
-    public int Health { get; private set; } = maxHealth;
-    public int MaxHealth {get; } = maxHealth;
+    public PlayerDto() {}
+
+    internal PlayerDto(Player p)
+    {
+        Id = p.Id;
+        Name = p.Name;
+        Role = p.Role;
+        Health = p.Health;
+        MaxHealth = p.MaxHealth;
+        Weapon = p.Weapon is null ? null : new WeaponCardDto(p.Weapon);
+        CardsInHand = p.CardsInHand.Select(c => new CardDto(c)).ToList();
+        CardsOnBoard = p.CardsOnBoard.Select(c => new CardDto(c)).ToList();
+        IsBangPlayed = p.IsBangPlayed;
+        IsDeadOnThisTurn = p.IsDeadOnThisTurn;
+    }
+    
+    [JsonProperty]
+    public Guid Id { get; private set; }
+    [JsonProperty]
+    public string Name { get; private set; } = string.Empty;
+    [JsonProperty]
+    public PlayerRole Role { get; private set; }
+    [JsonProperty]
+    public int Health { get; private set; }
+    [JsonProperty]
+    public int MaxHealth { get; private set; }
+    [JsonProperty] 
+    public WeaponCardDto? Weapon { get; private set; } = new();
+    [JsonProperty] 
+    public IReadOnlyList<CardDto> CardsInHand { get; private set; } = [];
+    [JsonProperty] 
+    public IReadOnlyList<CardDto> CardsOnBoard { get; private set; } = [];
+    [JsonProperty]
+    public bool IsBangPlayed { get; private set; }
+    [JsonProperty]
+    public bool IsDeadOnThisTurn { get; private set; }
+}
+
+public class Player
+{
+    public Guid Id { get; }
+    public string Name { get; }
+    public PlayerRole Role { get; }
+    public int Health { get; private set; }
+    public int MaxHealth {get; }
     public WeaponCard? Weapon { get; private set; }
     private readonly List<Card> _cardsInHand = [];
     public IReadOnlyList<Card> CardsInHand => _cardsInHand;
@@ -15,6 +58,32 @@ public class Player(Guid id, PlayerRole role, int maxHealth)
     public bool IsDead => Health <= 0;
     public int Range => Weapon?.Range ?? 1;
     public bool IsDeadOnThisTurn { get; private set; }
+
+    public Player(Guid id, string name, PlayerRole role, int maxHealth)
+    {
+        Id = id;
+        Name = name;
+        Role = role;
+        Health = maxHealth;
+        MaxHealth = maxHealth;
+    }
+    
+    internal Player(PlayerDto dto)
+    {
+        Id = dto.Id;
+        Name = dto.Name;
+        Role = dto.Role;
+        Health = dto.Health;
+        MaxHealth = dto.MaxHealth;
+        if (dto.Weapon is not null)
+            Weapon = (WeaponCard)CardFactory.CreateCard(dto.Weapon.Name, dto.Weapon.Suit, dto.Weapon.Rank);
+        foreach (var cardDto in dto.CardsInHand)
+            _cardsInHand.Add(CardFactory.CreateCard(cardDto.Name, cardDto.Suit, cardDto.Rank));
+        foreach (var cardDto in dto.CardsOnBoard)
+            _cardsOnBoard.Add(CardFactory.CreateCard(cardDto.Name, cardDto.Suit, cardDto.Rank));
+        IsBangPlayed = dto.IsBangPlayed;
+        IsDeadOnThisTurn = dto.IsDeadOnThisTurn;
+    }
 
     internal void AddCardInHand(Card card, IGameView gameView)
     {
