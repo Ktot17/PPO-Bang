@@ -19,42 +19,44 @@ public record DeckDto
     public IReadOnlyList<CardDto> DiscardPile { get; private set; } = [];
 }
 
-public sealed class Deck
+public class Deck
 {
-    private readonly Stack<Card> _drawPile = new();
+    protected readonly Stack<Card> DrawPileP = new();
     private readonly List<Card> _discardPile = [];
     private readonly Random _random = new();
     
     internal Card? TopDiscardedCard => _discardPile.Count == 0 ? null : _discardPile[_discardPile.Count - 1];
+    
+    internal Deck() {}
 
     internal Deck(ICardRepository cardRepository)
     {
         var cards = cardRepository.GetAll;
         Shuffle(cards);
         foreach (var card in cards)
-            _drawPile.Push(card);
+            DrawPileP.Push(card);
     }
 
     internal Deck(DeckDto dto)
     {
         foreach (var cardDto in dto.DrawPile.Reverse())
-            _drawPile.Push(CardFactory.CreateCard(cardDto.Name, cardDto.Suit, cardDto.Rank));
+            DrawPileP.Push(CardFactory.CreateCard(cardDto.Name, cardDto.Suit, cardDto.Rank));
         foreach (var cardDto in dto.DiscardPile)
             _discardPile.Add(CardFactory.CreateCard(cardDto.Name, cardDto.Suit, cardDto.Rank));
     }
 
     internal Card Draw(IGameView gameView)
     {
-        if (_drawPile.Count != 0)
-            return _drawPile.Pop();
+        if (DrawPileP.Count != 0)
+            return DrawPileP.Pop();
         Shuffle(_discardPile);
         foreach (var card in _discardPile)
         {
             gameView.CardReturnedToDeck(card.Id);
-            _drawPile.Push(card);
+            DrawPileP.Push(card);
         }
         _discardPile.Clear();
-        return _drawPile.Pop();
+        return DrawPileP.Pop();
     }
 
     internal void Discard(Card card, IGameView gameView)
@@ -74,13 +76,15 @@ public sealed class Deck
         }
     }
 
-    internal IReadOnlyList<Card> DrawPile => [.._drawPile];
+    internal IReadOnlyList<Card> DrawPile => [..DrawPileP];
     internal IReadOnlyList<Card> DiscardPile => _discardPile;
+}
 
-    internal void ForUnitTestWithDynamiteAndBeerBarrel()
+internal sealed class DeckForUnitTest : Deck
+{
+    internal DeckForUnitTest()
     {
-        _drawPile.Clear();
-        _drawPile.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Seven));
-        _drawPile.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Seven));
+        DrawPileP.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Seven));
+        DrawPileP.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Seven));
     }
 }

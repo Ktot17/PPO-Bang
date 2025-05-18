@@ -128,7 +128,8 @@ internal class GameState
     }
 }
 
-public class GameManager(ICardRepository cardRepository, ISaveRepository saveRepository, IGameView gameView) : IGameManager
+public class GameManager(ICardRepository cardRepository, ISaveRepository saveRepository, IGameView gameView)
+    : IGameManager
 {
     private const int MinPlayersCountConst = 4;
     private const int MaxPlayersCountConst = 7;
@@ -316,5 +317,14 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         }
     }
 
-    internal void ForUnitTestWithDynamiteAndBeerBarrel() => _gameState.CardDeck.ForUnitTestWithDynamiteAndBeerBarrel();
+    protected void ChangeGameState()
+    {
+        _gameState = new GameState(_gameState.Players, new DeckForUnitTest(), _gameState.CurrentPlayerId, _gameState.GameView);
+    }
+}
+
+internal sealed class GameManagerForUnitTest(ICardRepository cardRepository, 
+    ISaveRepository saveRepository, IGameView gameView) : GameManager(cardRepository, saveRepository, gameView)
+{
+    internal void ForUnitTestWithDynamiteAndBeerBarrel() => ChangeGameState();
 }

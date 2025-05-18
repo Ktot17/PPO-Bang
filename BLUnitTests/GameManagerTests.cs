@@ -494,7 +494,7 @@ public class GameManagerTests
     public async Task EndTurn_DynamiteReviveTest()
     {
         FillDeck(26, CardSuit.Spades);
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManagerForUnitTest(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
         var players = new List<string>(["1", "2", "3", "4"]);
         gameManager.GameInit(players);
         gameManager.GameStart();
