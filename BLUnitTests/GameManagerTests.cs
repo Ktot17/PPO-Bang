@@ -252,6 +252,36 @@ public class GameManagerTests
         Assert.Empty(gameManager.CurPlayer.CardsInHand);
         Assert.Equal(id, gameManager.CurPlayer.Id);
     }
+
+    [Fact]
+    public async Task PlayCard_CurPlayerDeathTest()
+    {
+        FillDeck();
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var players = new List<string>(["1", "2", "3",
+            "4", "5", "6", "7"]);
+        gameManager.GameInit(players);
+        gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Ace),
+            _gameViewMock.Object);
+        await gameManager.EndTurn();
+        var n = gameManager.CurPlayer.CardsInHand.Count;
+        for (var i = 0; i < n; ++i)
+            gameManager.DiscardCard(gameManager.CurPlayer.CardsInHand[0].Id);
+        _gameViewMock.Setup(get => get.GetPlayerIdAsync(
+                It.IsAny<IReadOnlyList<Player>>(), It.IsAny<Guid>())).
+            Returns(Task.FromResult(gameManager.Players[0].Id));
+        _gameViewMock.Setup(get => get.YesOrNoAsync(It.IsAny<Guid>(), It.IsAny<CardName>())).
+            Returns(Task.FromResult(true));
+        gameManager.CurPlayer.AddCardInHand(CardFactory.CreateCard(CardName.Duel, CardSuit.Clubs, CardRank.Ace),
+            _gameViewMock.Object);
+        var state = new GameState(gameManager.LivePlayers, null!, gameManager.CurPlayer.Id, _gameViewMock.Object);
+        await gameManager.CurPlayer.ApplyDamage(3, state);
+        var id = state.GetNextPlayer().Id;
+        var rc = await gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
+        Assert.Equal(CardRc.Ok, rc);
+        Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
+        Assert.Equal(id, gameManager.CurPlayer.Id);
+    }
     
     [Fact]
     public async Task PlayCard_IndiansTest()

@@ -64,7 +64,7 @@ public record GameStateDto
     public Guid CurrentPlayerId { get; private set; }
 }
 
-internal class GameState
+public class GameState
 {
     private int _currentPlayerIndex;
     internal List<Player> Players { get; }
@@ -135,7 +135,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
     private const int MaxPlayersCountConst = 7;
     private const int OutlawRewardCardCount = 3;
     
-    private GameState _gameState = null!;
+    protected GameState GameState = null!;
     private readonly Random _random = new();
     private readonly List<PlayerRole> _roles =
         [PlayerRole.Renegade, PlayerRole.Outlaw,
@@ -144,12 +144,12 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
 
     public static int MinPlayersCount => MinPlayersCountConst;
     public static int MaxPlayersCount => MaxPlayersCountConst;
-    public IReadOnlyList<Player> Players => _gameState.Players;
-    public Player CurPlayer => _gameState.CurrentPlayer;
-    public Card? TopDiscardedCard => _gameState.CardDeck.TopDiscardedCard;
-    public IReadOnlyList<Player> LivePlayers => _gameState.LivePlayers;
-    public IReadOnlyList<Player> DeadPlayers => _gameState.DeadPlayers;
-    public IReadOnlyList<Card> CardsInDeck => _gameState.CardDeck.DrawPile;
+    public IReadOnlyList<Player> Players => GameState.Players;
+    public Player CurPlayer => GameState.CurrentPlayer;
+    public Card? TopDiscardedCard => GameState.CardDeck.TopDiscardedCard;
+    public IReadOnlyList<Player> LivePlayers => GameState.LivePlayers;
+    public IReadOnlyList<Player> DeadPlayers => GameState.DeadPlayers;
+    public IReadOnlyList<Card> CardsInDeck => GameState.CardDeck.DrawPile;
 
     public void GameInit(IEnumerable<string> playerNames)
     {
@@ -173,16 +173,16 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
             _roles.RemoveAt(k);
         }
         
-        _gameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
+        GameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
     }
 
     public void GameStart()
     {
-        foreach (var player in _gameState.Players)
+        foreach (var player in GameState.Players)
             for (var i = 0; i < player.MaxHealth; ++i)
-                player.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
-        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
-        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
+                player.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
+        CurPlayer.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
+        CurPlayer.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
     }
 
     private void PlayerClear(Guid playerId)
@@ -191,11 +191,11 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         var cardsInHandCount = player.CardsInHand.Count;
         var cardsOnBoardCount = player.CardsOnBoard.Count;
         for (var i = 0; i < cardsInHandCount; ++i)
-            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsInHand[0].Id), _gameState.GameView);
+            GameState.CardDeck.Discard(player.RemoveCard(player.CardsInHand[0].Id), GameState.GameView);
         for (var i = 0; i < cardsOnBoardCount; ++i)
-            _gameState.CardDeck.Discard(player.RemoveCard(player.CardsOnBoard[0].Id), _gameState.GameView);
+            GameState.CardDeck.Discard(player.RemoveCard(player.CardsOnBoard[0].Id), GameState.GameView);
         if (player.Weapon is not null)
-            _gameState.CardDeck.Discard(player.RemoveCard(player.Weapon.Id), _gameState.GameView);
+            GameState.CardDeck.Discard(player.RemoveCard(player.Weapon.Id), GameState.GameView);
     }
 
     public async Task<CardRc> PlayCard(Guid cardId)
@@ -204,7 +204,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         if (curCard is null)
             throw new NotExistingGuidException();
         var isIndians = curCard.Name is CardName.Indians;
-        var rc = await curCard.Play(_gameState);
+        var rc = await curCard.Play(GameState);
         if (rc is not CardRc.Ok)
             return rc;
         if (curCard.Type is CardType.Instant)
@@ -218,7 +218,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
             {
                 case PlayerRole.Outlaw:
                     for (var i = 0; i < OutlawRewardCardCount; ++i)
-                        CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
+                        CurPlayer.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
                     break;
                 case PlayerRole.DeputySheriff when CurPlayer.Role is PlayerRole.Sheriff:
                     PlayerClear(CurPlayer.Id);
@@ -232,7 +232,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         return CheckEndGame();
     }
 
-    public void DiscardCard(Guid cardId) => _gameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), _gameState.GameView);
+    public void DiscardCard(Guid cardId) => GameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), GameState.GameView);
 
     public async Task<CardRc> EndTurn()
     {
@@ -243,13 +243,13 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
                 return CardRc.CantEndTurn;
             isFirstIteration = false;
             CurPlayer.EndTurn();
-            _gameState.NextPlayer();
+            GameState.NextPlayer();
             Card? card;
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Dynamite)) is not null)
-                await ((Dynamite)card).ApplyEffect(_gameState);
+                await ((Dynamite)card).ApplyEffect(GameState);
 
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.BeerBarrel)) is not null)
-                ((BeerBarrel)card).ApplyEffect(_gameState);
+                ((BeerBarrel)card).ApplyEffect(GameState);
 
             var rc = CheckEndGame();
             if (rc is not CardRc.Ok)
@@ -258,11 +258,11 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
                 continue;
             
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Jail)) is not null && 
-                ((Jail)card).ApplyEffect(_gameState))
+                ((Jail)card).ApplyEffect(GameState))
                 continue;
 
-            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
-            CurPlayer.AddCardInHand(_gameState.CardDeck.Draw(_gameState.GameView), _gameState.GameView);
+            CurPlayer.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
+            CurPlayer.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
             return CardRc.Ok;
         }
     }
@@ -282,18 +282,21 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
             PlayerClear(player.Id);
             player.DeadEarlier();
         }
+        
+        if (CurPlayer.IsDead)
+            GameState.NextPlayer();
 
         return CardRc.Ok;
     }
 
-    public int GetRange(Guid playerId, Guid targetId) => _gameState.GetRange(playerId, targetId);
+    public int GetRange(Guid playerId, Guid targetId) => GameState.GetRange(playerId, targetId);
     
-    public void SaveState() => saveRepository.SaveState(new GameStateDto(_gameState));
+    public void SaveState() => saveRepository.SaveState(new GameStateDto(GameState));
 
     public void LoadState(int stateId)
     {
         var gameState = saveRepository.FindState(stateId);
-        _gameState = new GameState(gameState, gameView);
+        GameState = new GameState(gameState, gameView);
     }
 
     public Dictionary<int, long> GetAllSaves => saveRepository.GetAll;
@@ -303,8 +306,8 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         get
         {
             var cards = new List<Card>();
-            cards.AddRange(_gameState.CardDeck.DrawPile);
-            cards.AddRange(_gameState.CardDeck.DiscardPile);
+            cards.AddRange(GameState.CardDeck.DrawPile);
+            cards.AddRange(GameState.CardDeck.DiscardPile);
             foreach (var player in Players)
             {
                 cards.AddRange(player.CardsInHand);
@@ -316,15 +319,4 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
             return cards;
         }
     }
-
-    protected void ChangeGameState()
-    {
-        _gameState = new GameState(_gameState.Players, new DeckForUnitTest(), _gameState.CurrentPlayerId, _gameState.GameView);
-    }
-}
-
-internal sealed class GameManagerForUnitTest(ICardRepository cardRepository, 
-    ISaveRepository saveRepository, IGameView gameView) : GameManager(cardRepository, saveRepository, gameView)
-{
-    internal void ForUnitTestWithDynamiteAndBeerBarrel() => ChangeGameState();
 }

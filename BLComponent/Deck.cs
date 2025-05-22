@@ -79,12 +79,3 @@ public class Deck
     internal IReadOnlyList<Card> DrawPile => [..DrawPileP];
     internal IReadOnlyList<Card> DiscardPile => _discardPile;
 }
-
-internal sealed class DeckForUnitTest : Deck
-{
-    internal DeckForUnitTest()
-    {
-        DrawPileP.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Clubs, CardRank.Seven));
-        DrawPileP.Push(CardFactory.CreateCard(CardName.Bang, CardSuit.Spades, CardRank.Seven));
-    }
-}
