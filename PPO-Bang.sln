@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBComponent", "DBComponent\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLUnitTests", "BLUnitTests\BLUnitTests.csproj", "{75CF1E64-B698-47D7-B2D0-92D0AF0391A5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBUnitTests", "DBUnitTests\DBUnitTests.csproj", "{6B5816C1-4A58-42D5-BDB4-42BDCF044425}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,5 +35,9 @@ Global
 		{75CF1E64-B698-47D7-B2D0-92D0AF0391A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75CF1E64-B698-47D7-B2D0-92D0AF0391A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75CF1E64-B698-47D7-B2D0-92D0AF0391A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B5816C1-4A58-42D5-BDB4-42BDCF044425}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B5816C1-4A58-42D5-BDB4-42BDCF044425}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B5816C1-4A58-42D5-BDB4-42BDCF044425}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B5816C1-4A58-42D5-BDB4-42BDCF044425}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
