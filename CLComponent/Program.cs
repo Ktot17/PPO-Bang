@@ -283,12 +283,12 @@ public static class Program
         Console.Clear();
         Console.OutputEncoding = Encoding.UTF8;
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var path = Path.Combine(appData, "Bang!");
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var config = new ConfigurationBuilder()
-            .SetBasePath(path)
+            .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("config.json")
             .Build();
+        var path = Path.Combine(appData, config["SavesFileName"]!);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var logger = new LoggerConfiguration()
             .WriteTo.File(Path.Combine(path, "log.txt"))
             .CreateLogger();
