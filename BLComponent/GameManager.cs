@@ -170,6 +170,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
             (enumerable[n], enumerable[k]) = (enumerable[k], enumerable[n]);
         }
         var players = new List<Player> { new(Guid.NewGuid(), enumerable[0], PlayerRole.Sheriff, 5) };
+        logger.Information($"Игрок {enumerable[0]}. Роль {PlayerRole.Sheriff}.");
         for (var i = 1; i < enumerable.Count; ++i)
         {
             var k = _random.Next(enumerable.Count - i);
@@ -336,12 +337,17 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
 
     public int GetRange(Guid playerId, Guid targetId) => GameState.GetRange(playerId, targetId);
     
-    public void SaveState() => saveRepository.SaveState(new GameStateDto(GameState));
+    public void SaveState()
+    {
+        saveRepository.SaveState(new GameStateDto(GameState));
+        logger.Information("Игра сохранена.");
+    }
 
     public void LoadState(int stateId)
     {
         var gameState = saveRepository.FindState(stateId);
         GameState = new GameState(gameState, gameView);
+        logger.Information("Игра загружена.");
     }
 
     public Dictionary<int, long> GetAllSaves => saveRepository.GetAll;

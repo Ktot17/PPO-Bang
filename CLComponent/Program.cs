@@ -288,8 +288,10 @@ public static class Program
             .AddJsonFile("config.json")
             .Build();
         var path = Path.Combine(appData, config["SavesFileName"]!);
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        path = Path.GetDirectoryName(path)!;
+        Directory.CreateDirectory(path);
         var logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(config)
             .WriteTo.File(Path.Combine(path, "log.txt"))
             .CreateLogger();
         var serviceProvider = new ServiceCollection()
