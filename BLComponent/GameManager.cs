@@ -247,14 +247,16 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
 
     public void DiscardCard(Guid cardId)
     {
-        var curCard = CurPlayer.CardsInHand.FirstOrDefault(c => c.Id == cardId);
-        if (curCard is null)
+        try
+        {
+            GameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), GameState.GameView);
+        }
+        catch (NotExistingGuidException)
         {
             logger.Error($"Игрок {CurPlayer.Name} сбросил несуществующую карту.");
-            throw new NotExistingGuidException();
+            throw;
         }
-        logger.Information($"Игрок {CurPlayer.Name} сбросил карту {curCard.Name}.");
-        GameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), GameState.GameView);
+        logger.Information($"Игрок {CurPlayer.Name} сбросил карту.");
     }
 
     public async Task<CardRc> EndTurn()
