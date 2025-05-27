@@ -178,8 +178,16 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
             logger.Information($"Игрок {enumerable[i]}. Роль {_roles[k]}.");
             _roles.RemoveAt(k);
         }
-        
-        GameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
+
+        try
+        {
+            GameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
+        }
+        catch (WrongNumberOfPlayersException)
+        {
+            logger.Fatal("Неправильная строка подключения к базе данных карт.");
+            throw;
+        }
     }
 
     public void GameStart()

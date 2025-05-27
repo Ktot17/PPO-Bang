@@ -567,7 +567,18 @@ public static class Program
                 return;
         }
         else
-            GameInit();
+        {
+            try
+            {
+                GameInit();
+            }
+            catch (WrongConnectionStringException)
+            {
+                Console.WriteLine("Неправильная строка подключения к базе данных карт.");
+                EnterToContinue();
+                return;
+            }
+        }
 
         while (running)
             running = await GameLoopMenu();
