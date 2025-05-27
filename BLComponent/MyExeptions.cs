@@ -10,4 +10,4 @@ public class NotExistingGuidException() : Exception("There are no game object wi
 
 public class NotExistingRoleException() : Exception("There are no such role.");
 
-public class CantDeserializeGameStateException() : Exception("Can't deserialize GameState.");
+public class WrongConnectionStringException() : Exception("Wrong connection string.");

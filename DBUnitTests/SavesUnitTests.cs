@@ -2,6 +2,7 @@ using BLComponent;
 using BLComponent.InputPorts;
 using Microsoft.Extensions.Configuration;
 using Moq;
+using Serilog;
 
 namespace DBUnitTests;
 
@@ -63,6 +64,7 @@ public class SavesUnitTests
     {
         var configMock = new Mock<IConfiguration>();
         configMock.Setup(x => x["SavesFileName"]).Returns("Bang!/test.db");
+        var loggerMock = new Mock<ILogger>();
         var cardsMock = new Mock<ICardRepository>();
         var cards = new List<Card>();
         for (var i = 0; i < 50; i++)
@@ -70,12 +72,12 @@ public class SavesUnitTests
         cardsMock.Setup(repo => repo.GetAll).Returns(cards);
         var gameViewMock = new Mock<IGameView>();
         var saveRepo = new SaveRepositoryForTests(configMock.Object);
-        var gameManager = new GameManager(cardsMock.Object, saveRepo, gameViewMock.Object);
+        var gameManager = new GameManager(cardsMock.Object, saveRepo, gameViewMock.Object, loggerMock.Object);
         var players = new List<string> { "1", "2", "3", "4", "5", "6", "7" };
         gameManager.GameInit(players);
         gameManager.SaveState();
         await Task.Delay(1000);
-        var newGameManager = new GameManager(cardsMock.Object, saveRepo, gameViewMock.Object);
+        var newGameManager = new GameManager(cardsMock.Object, saveRepo, gameViewMock.Object, loggerMock.Object);
         newGameManager.LoadState(gameManager.GetAllSaves.Keys.First());
         AssertGameManagers(gameManager, newGameManager);
         await newGameManager.EndTurn();
@@ -100,7 +102,7 @@ public class SavesUnitTests
         await newGameManager.PlayCard(newGameManager.CurPlayer.CardsInHand[^1].Id);
         await newGameManager.PlayCard(newGameManager.CurPlayer.CardsInHand[^1].Id);
         newGameManager.SaveState();
-        gameManager = new GameManager(cardsMock.Object, saveRepo, gameViewMock.Object);
+        gameManager = new GameManager(cardsMock.Object, saveRepo, gameViewMock.Object, loggerMock.Object);
         gameManager.LoadState(newGameManager.GetAllSaves.Keys.First());
         AssertGameManagers(gameManager, newGameManager);
     }

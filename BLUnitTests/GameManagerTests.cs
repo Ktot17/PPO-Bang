@@ -1,6 +1,7 @@
 using BLComponent;
 using BLComponent.InputPorts;
 using Moq;
+using Serilog;
 
 namespace BLUnitTests;
 
@@ -9,6 +10,7 @@ public class GameManagerTests
     private readonly Mock<ICardRepository> _cardRepoMock = new();
     private readonly Mock<ISaveRepository> _saveRepoMock = new();
     private readonly Mock<IGameView> _gameViewMock = new();
+    private readonly Mock<ILogger> _loggerMock = new();
 
     private void FillDeck(int cardCount = 80, CardSuit suit = CardSuit.Diamonds)
     {
@@ -25,7 +27,7 @@ public class GameManagerTests
     public void GameInit_PlayerCountTests()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3"]);
         
         Assert.Throws<WrongNumberOfPlayersException>(() => gameManager.GameInit(players));
@@ -42,7 +44,7 @@ public class GameManagerTests
     public void GameInit_NotUniqueIdsTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "1", "3", "2", "2", "4"]);
         
         Assert.Throws<NotUniqueNamesException>(() => gameManager.GameInit(players));
@@ -52,7 +54,7 @@ public class GameManagerTests
     public void GameInit_4RolesTests()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3", "4"]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.Outlaw,
             PlayerRole.Outlaw, PlayerRole.Renegade, PlayerRole.Sheriff };
@@ -68,7 +70,7 @@ public class GameManagerTests
     public void GameInit_5RolesTests()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3", "4", "5"]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.DeputySheriff, PlayerRole.Outlaw,
             PlayerRole.Outlaw, PlayerRole.Renegade, PlayerRole.Sheriff };
@@ -84,7 +86,7 @@ public class GameManagerTests
     public void GameInit_6RolesTests()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2",
             "3", "4", "5", "6"]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.DeputySheriff, PlayerRole.Outlaw,
@@ -101,7 +103,7 @@ public class GameManagerTests
     public void GameInit_7RolesTests()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         var expectedRoles = new List<PlayerRole> { PlayerRole.DeputySheriff, PlayerRole.DeputySheriff, PlayerRole.Outlaw,
@@ -118,7 +120,7 @@ public class GameManagerTests
     public async Task PlayCard_NotInHandTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -129,7 +131,7 @@ public class GameManagerTests
     public async Task PlayCard_TooFarTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -149,7 +151,7 @@ public class GameManagerTests
     public async Task PlayCard_CantPlayTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -180,7 +182,7 @@ public class GameManagerTests
     public async Task PlayCard_OutlawDeathTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -206,7 +208,7 @@ public class GameManagerTests
     public async Task PlayCard_RenegadeDeathTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -232,7 +234,7 @@ public class GameManagerTests
     public async Task PlayCard_DeputyDeathTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -257,7 +259,7 @@ public class GameManagerTests
     public async Task PlayCard_CurPlayerDeathTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -276,18 +278,20 @@ public class GameManagerTests
             _gameViewMock.Object);
         var state = new GameState(gameManager.LivePlayers, null!, gameManager.CurPlayer.Id, _gameViewMock.Object);
         await gameManager.CurPlayer.ApplyDamage(3, state);
-        var id = state.GetNextPlayer().Id;
+        var nextPlayer = state.GetNextPlayer();
+        var cardCount = nextPlayer.CardsInHand.Count;
         var rc = await gameManager.PlayCard(gameManager.CurPlayer.CardsInHand[0].Id);
         Assert.Equal(CardRc.Ok, rc);
         Assert.Equal(players.Count - 1, gameManager.LivePlayers.Count);
-        Assert.Equal(id, gameManager.CurPlayer.Id);
+        Assert.Equal(nextPlayer.Id, gameManager.CurPlayer.Id);
+        Assert.Equal(cardCount + 2, gameManager.CurPlayer.CardsInHand.Count);
     }
     
     [Fact]
     public async Task PlayCard_IndiansTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -316,7 +320,7 @@ public class GameManagerTests
     public async Task PlayCard_DuelTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -353,7 +357,7 @@ public class GameManagerTests
     public async Task PlayCard_LastPlayerKillsPlayerTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -386,7 +390,7 @@ public class GameManagerTests
     public void DiscardCard_NotInHandTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -397,7 +401,7 @@ public class GameManagerTests
     public void DiscardCard_Test()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -411,7 +415,7 @@ public class GameManagerTests
     public async Task EndTurn_TooMuchCardsTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -426,7 +430,7 @@ public class GameManagerTests
     public async Task EndTurn_NoCardsOnBoardTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -445,7 +449,7 @@ public class GameManagerTests
     public async Task EndTurn_DynamiteSheriffDeathTest()
     {
         FillDeck(suit: CardSuit.Spades);
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3", "4"]);
         gameManager.GameInit(players);
         gameManager.GameStart();
@@ -469,7 +473,7 @@ public class GameManagerTests
     public async Task EndTurn_DynamiteDeathTest()
     {
         FillDeck(suit: CardSuit.Spades);
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3", "4"]);
         gameManager.GameInit(players);
         gameManager.GameStart();
@@ -499,7 +503,7 @@ public class GameManagerTests
     public async Task EndTurn_DynamiteWithoutDeathTest()
     {
         FillDeck(suit: CardSuit.Spades);
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3", "4"]);
         gameManager.GameInit(players);
         gameManager.GameStart();
@@ -524,7 +528,7 @@ public class GameManagerTests
     public async Task EndTurn_DynamiteReviveTest()
     {
         FillDeck(26, CardSuit.Spades);
-        var gameManager = new GameManagerForUnitTest(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManagerForUnitTest(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3", "4"]);
         gameManager.GameInit(players);
         gameManager.GameStart();
@@ -555,7 +559,7 @@ public class GameManagerTests
     public async Task EndTurn_BeerBarrelTest()
     {
         FillDeck(suit: CardSuit.Clubs);
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -581,7 +585,7 @@ public class GameManagerTests
     public async Task EndTurn_JailTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
@@ -606,14 +610,14 @@ public class GameManagerTests
     public async Task CheckEndGame_SheriffWinTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3", "4", "5"]);
         gameManager.GameInit(players);
         foreach (var player in gameManager.Players.Where(p => p.Role is not PlayerRole.Sheriff and
                      not PlayerRole.DeputySheriff))
             await player.ApplyDamage(4,
                 new GameState(gameManager.LivePlayers, null!, gameManager.CurPlayer.Id, _gameViewMock.Object));
-        var rc = gameManager.CheckEndGame();
+        var rc = await gameManager.CheckEndGame();
         Assert.Equal(CardRc.SheriffWin, rc);
         Assert.Equal(2, gameManager.LivePlayers.Count);
     }
@@ -622,14 +626,14 @@ public class GameManagerTests
     public async Task CheckEndGame_RenegadeWinTest()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
         foreach (var player in gameManager.Players.Where(p => p.Role is not PlayerRole.Renegade))
             await player.ApplyDamage(5,
                 new GameState(gameManager.LivePlayers, null!, gameManager.CurPlayer.Id, _gameViewMock.Object));
-        var rc = gameManager.CheckEndGame();
+        var rc = await gameManager.CheckEndGame();
         Assert.Equal(CardRc.RenegadeWin, rc);
         Assert.Single(gameManager.LivePlayers);
     }
@@ -638,7 +642,7 @@ public class GameManagerTests
     public void TopDiscardedCard_Test()
     {
         FillDeck();
-        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object);
+        var gameManager = new GameManager(_cardRepoMock.Object, _saveRepoMock.Object, _gameViewMock.Object, _loggerMock.Object);
         var players = new List<string>(["1", "2", "3",
             "4", "5", "6", "7"]);
         gameManager.GameInit(players);
