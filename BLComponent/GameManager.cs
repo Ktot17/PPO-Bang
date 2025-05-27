@@ -3,6 +3,7 @@ using BLComponent.OutputPort;
 using Newtonsoft.Json;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("BLUnitTests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DBUnitTests")]
 namespace BLComponent;
 
 public interface IGameView
