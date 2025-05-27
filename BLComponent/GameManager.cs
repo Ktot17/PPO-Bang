@@ -183,7 +183,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         {
             GameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
         }
-        catch (WrongNumberOfPlayersException)
+        catch (WrongConnectionStringException)
         {
             logger.Fatal("Неправильная строка подключения к базе данных карт.");
             throw;

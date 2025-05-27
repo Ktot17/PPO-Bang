@@ -6,5 +6,3 @@ public class Connection(IConfiguration config)
 {
     public string? GetDefaultConnectionString => config["ConnectionStrings:DefaultConnection"];
 }
-
-public class WrongConnectionStringException() : Exception("Wrong connection string.");
