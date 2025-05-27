@@ -1,6 +1,7 @@
 ﻿using BLComponent.InputPorts;
 using BLComponent.OutputPort;
 using Newtonsoft.Json;
+using Serilog;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("BLUnitTests")]
 namespace BLComponent;
@@ -128,7 +129,8 @@ public class GameState
     }
 }
 
-public class GameManager(ICardRepository cardRepository, ISaveRepository saveRepository, IGameView gameView)
+public class GameManager(ICardRepository cardRepository, ISaveRepository saveRepository,
+    IGameView gameView, ILogger logger)
     : IGameManager
 {
     private const int MinPlayersCountConst = 4;
@@ -154,6 +156,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
     public void GameInit(IEnumerable<string> playerNames)
     {
         List<string> enumerable = [.. playerNames];
+        logger.Information("Инициализация игры.");
         if (enumerable.Count is < MinPlayersCountConst or > MaxPlayersCountConst)
             throw new WrongNumberOfPlayersException(enumerable.Count);
         if (enumerable.Distinct().Count() != enumerable.Count)
@@ -170,6 +173,7 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         {
             var k = _random.Next(enumerable.Count - i);
             players.Add(new Player(Guid.NewGuid(), enumerable[i], _roles[k], 4));
+            logger.Information($"Игрок {enumerable[i]}. Роль {_roles[k]}.");
             _roles.RemoveAt(k);
         }
         
@@ -202,17 +206,24 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
     {
         var curCard = CurPlayer.CardsInHand.FirstOrDefault(c => c.Id == cardId);
         if (curCard is null)
+        {
+            logger.Error($"Игрок {CurPlayer.Name} разыграл несуществующую карту.");
             throw new NotExistingGuidException();
+        }
+        logger.Information($"Игрок {CurPlayer.Name} разыграл карту {curCard.Name}.");
         var isIndians = curCard.Name is CardName.Indians;
         var rc = await curCard.Play(GameState);
         if (rc is not CardRc.Ok)
+        {
+            logger.Information($"Игрок {CurPlayer.Name} не смог разыграть карту {curCard.Name}.({rc})");
             return rc;
+        }
         if (curCard.Type is CardType.Instant)
             DiscardCard(curCard.Id);
         else
             CurPlayer.RemoveCard(curCard.Id);
         if (isIndians)
-            return CheckEndGame();
+            return await CheckEndGame();
         foreach (var playerRole in DeadPlayers.Where(p => p.IsDeadOnThisTurn).Select(p => p.Role))
             switch (playerRole)
             {
@@ -225,14 +236,26 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
                     break;
                 case PlayerRole.Renegade:
                 case PlayerRole.Sheriff:
+                case PlayerRole.DeputySheriff:
                     break;
                 default:
+                    logger.Fatal("Несуществующая роль.");
                     throw new NotExistingRoleException();
             }
-        return CheckEndGame();
+        return await CheckEndGame();
     }
 
-    public void DiscardCard(Guid cardId) => GameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), GameState.GameView);
+    public void DiscardCard(Guid cardId)
+    {
+        var curCard = CurPlayer.CardsInHand.FirstOrDefault(c => c.Id == cardId);
+        if (curCard is null)
+        {
+            logger.Error($"Игрок {CurPlayer.Name} сбросил несуществующую карту.");
+            throw new NotExistingGuidException();
+        }
+        logger.Information($"Игрок {CurPlayer.Name} сбросил карту {curCard.Name}.");
+        GameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), GameState.GameView);
+    }
 
     public async Task<CardRc> EndTurn()
     {
@@ -240,26 +263,39 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         while (true)
         {
             if (isFirstIteration && CurPlayer.CardsInHand.Count > CurPlayer.Health)
+            {
+                logger.Information($"Игрок {CurPlayer.Name} не смог закончить ход.");
                 return CardRc.CantEndTurn;
+            }
+            logger.Information($"Игрок {CurPlayer.Name} закончил ход.");
             isFirstIteration = false;
             CurPlayer.EndTurn();
             GameState.NextPlayer();
             Card? card;
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Dynamite)) is not null)
+            {
+                logger.Information($"У игрока {CurPlayer.Name} взорвался динамит.");
                 await ((Dynamite)card).ApplyEffect(GameState);
+            }
 
             if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.BeerBarrel)) is not null)
+            {
+                logger.Information($"У игрока {CurPlayer.Name} открылась бочка с пивом.");
                 ((BeerBarrel)card).ApplyEffect(GameState);
+            }
 
-            var rc = CheckEndGame();
+            var rc = await CheckEndGame();
             if (rc is not CardRc.Ok)
                 return rc;
             if (CurPlayer.IsDead)
                 continue;
-            
-            if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Jail)) is not null && 
+
+            if ((card = CurPlayer.CardsOnBoard.FirstOrDefault(c => c.Name == CardName.Jail)) is not null &&
                 ((Jail)card).ApplyEffect(GameState))
+            {
+                logger.Information($"Игрока {CurPlayer.Name} пропускает ход в тюрьме.");
                 continue;
+            }
 
             CurPlayer.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
             CurPlayer.AddCardInHand(GameState.CardDeck.Draw(GameState.GameView), GameState.GameView);
@@ -267,24 +303,30 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         }
     }
 
-    internal CardRc CheckEndGame()
+    internal async Task<CardRc> CheckEndGame()
     {
         if (Players[0].IsDead)
-            return Players.Any(p => p.Role != PlayerRole.Renegade && !p.IsDead) ? 
-                CardRc.OutlawWin : CardRc.RenegadeWin;
+        {
+            var rc = Players.Any(p => p.Role != PlayerRole.Renegade && !p.IsDead) ? CardRc.OutlawWin : CardRc.RenegadeWin;
+            logger.Information("Игра закончилась победой " + (rc is CardRc.OutlawWin ? "бандитов." : "ренегата."));
+            return rc;
+        }
 
         if (!Players.Any(p => p is { Role: PlayerRole.Outlaw, IsDead: false }) &&
             !Players.Any(p => p is { Role: PlayerRole.Renegade, IsDead: false }))
+        {
+            logger.Information("Игра закончилась победой шерифа.");
             return CardRc.SheriffWin;
+        }
 
         foreach (var player in DeadPlayers.Where(p => p.IsDeadOnThisTurn))
         {
             PlayerClear(player.Id);
             player.DeadEarlier();
         }
-        
+
         if (CurPlayer.IsDead)
-            GameState.NextPlayer();
+            await EndTurn();
 
         return CardRc.Ok;
     }
