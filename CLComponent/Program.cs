@@ -168,16 +168,14 @@ public static class Program
 
         private static void GeneralStoreResult(bool didWork)
         {
-            string outString;
             if (didWork)
-                outString = "Все игроки получили по карте из магазина.";
+                Console.WriteLine("Все игроки получили по карте из магазина.");
             else
             {
                 Console.Clear();
-                outString = "Неверный номер карты.";
+                Console.WriteLine("Неверный номер карты.");
                 EnterToContinue();
             }
-            Console.WriteLine(outString);
         }
 
         private static void DuelAndIndiansResult(Guid curPlayerId, CardName name, bool? didWork)
@@ -280,7 +278,6 @@ public static class Program
 
     private static void CreateGameManager()
     {
-        Console.Clear();
         Console.OutputEncoding = Encoding.UTF8;
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var config = new ConfigurationBuilder()
@@ -308,7 +305,7 @@ public static class Program
 
     private static bool GameLoad()
     {
-        CreateGameManager();
+        Console.Clear();
         var saves = _gameManager.GetAllSaves.ToList();
 
         if (saves.Count == 0)
@@ -337,7 +334,7 @@ public static class Program
 
     private static void GameInit()
     {
-        CreateGameManager();
+        Console.Clear();
         _gameManager.GameInit(_playerNames);
         _gameManager.GameStart();
 
@@ -690,6 +687,7 @@ public static class Program
 
     public static async Task<int> Main()
     {
+        CreateGameManager();
         await MainMenu();
         return 0;
     }
