@@ -38,7 +38,6 @@
 /**/ExportedObj/
 /**/.consulo/
 *.unityproj
-*.sln
 *.suo
 *.tmp
 *.userprefs
