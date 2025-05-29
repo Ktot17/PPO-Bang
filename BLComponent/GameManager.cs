@@ -159,9 +159,18 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         List<string> enumerable = [.. playerNames];
         logger.Information("Инициализация игры.");
         if (enumerable.Count is < MinPlayersCountConst or > MaxPlayersCountConst)
-            throw new WrongNumberOfPlayersException(enumerable.Count);
+        {
+            var ex = new WrongNumberOfPlayersException(enumerable.Count);
+            logger.Error(ex, "Неправильное количество игроков.");
+            throw ex;
+        }
+
         if (enumerable.Distinct().Count() != enumerable.Count)
-            throw new NotUniqueNamesException();
+        {
+            var ex = new NotUniqueNamesException();
+            logger.Error(ex, "Есть игроки с одинаковыми именами.");
+            throw ex;
+        }
         var n = enumerable.Count;
         while (n > 1)
         {
@@ -170,22 +179,23 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
             (enumerable[n], enumerable[k]) = (enumerable[k], enumerable[n]);
         }
         var players = new List<Player> { new(Guid.NewGuid(), enumerable[0], PlayerRole.Sheriff, 5) };
+        var roles = _roles.ToList();
         logger.Information($"Игрок {enumerable[0]}. Роль {PlayerRole.Sheriff}.");
         for (var i = 1; i < enumerable.Count; ++i)
         {
             var k = _random.Next(enumerable.Count - i);
-            players.Add(new Player(Guid.NewGuid(), enumerable[i], _roles[k], 4));
-            logger.Information($"Игрок {enumerable[i]}. Роль {_roles[k]}.");
-            _roles.RemoveAt(k);
+            players.Add(new Player(Guid.NewGuid(), enumerable[i], roles[k], 4));
+            logger.Information($"Игрок {enumerable[i]}. Роль {roles[k]}.");
+            roles.RemoveAt(k);
         }
 
         try
         {
             GameState = new GameState(players, new Deck(cardRepository), players[0].Id, gameView);
         }
-        catch (WrongConnectionStringException)
+        catch (WrongConnectionStringException ex)
         {
-            logger.Fatal("Неправильная строка подключения к базе данных карт.");
+            logger.Fatal(ex, "Неправильная строка подключения к базе данных карт.");
             throw;
         }
     }
@@ -217,12 +227,22 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         var curCard = CurPlayer.CardsInHand.FirstOrDefault(c => c.Id == cardId);
         if (curCard is null)
         {
-            logger.Error($"Игрок {CurPlayer.Name} разыграл несуществующую карту.");
-            throw new NotExistingGuidException();
+            var ex = new NotExistingGuidException();
+            logger.Error(ex, $"Игрок {CurPlayer.Name} разыграл несуществующую карту.");
+            throw ex;
         }
         logger.Information($"Игрок {CurPlayer.Name} разыграл карту {curCard.Name}.");
         var isIndians = curCard.Name is CardName.Indians;
-        var rc = await curCard.Play(GameState);
+        CardRc rc;
+        try
+        {
+            rc = await curCard.Play(GameState);
+        }
+        catch (NotExistingGuidException ex)
+        {
+            logger.Error(ex, $"Игрок {CurPlayer.Name} выбрал несуществующего игрока/карту.");
+            throw;
+        }
         if (rc is not CardRc.Ok)
         {
             logger.Information($"Игрок {CurPlayer.Name} не смог разыграть карту {curCard.Name}.({rc})");
@@ -249,8 +269,9 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
                 case PlayerRole.DeputySheriff:
                     break;
                 default:
-                    logger.Fatal("Несуществующая роль.");
-                    throw new NotExistingRoleException();
+                    var ex = new NotExistingRoleException();
+                    logger.Fatal(ex, "Несуществующая роль.");
+                    throw ex;
             }
         return await CheckEndGame();
     }
@@ -261,9 +282,9 @@ public class GameManager(ICardRepository cardRepository, ISaveRepository saveRep
         {
             GameState.CardDeck.Discard(CurPlayer.RemoveCard(cardId), GameState.GameView);
         }
-        catch (NotExistingGuidException)
+        catch (NotExistingGuidException ex)
         {
-            logger.Error($"Игрок {CurPlayer.Name} сбросил несуществующую карту.");
+            logger.Error(ex, $"Игрок {CurPlayer.Name} сбросил несуществующую карту.");
             throw;
         }
         logger.Information($"Игрок {CurPlayer.Name} сбросил карту.");
